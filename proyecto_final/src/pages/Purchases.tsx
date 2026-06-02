@@ -194,56 +194,44 @@ const Purchases: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Transacciones</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <ShoppingCart size={18} />
+        {[
+          { label: 'Transacciones', value: purchases.length, icon: <ShoppingCart size={18} />, trend: 'Total acumulado' },
+          { label: 'Volumen Total', value: `$${purchases.reduce((acc, p) => acc + (Number(p.total) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <CreditCard size={18} />, trend: 'En ventas brutas' },
+          { label: 'Pagadas', value: purchases.filter(p => p.estado === 'PAGADA').length, icon: <CheckCircle size={18} />, trend: 'Éxito en cobros' }
+        ].map((stat, i) => (
+          <div 
+            key={i} 
+            className="group bg-gradient-to-b from-white to-gray-50/30 p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-gray-250 transition-all duration-300 hover:-translate-y-0.5 cursor-default"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
+              <div className="bg-gray-50 p-2 rounded-xl text-gray-600 group-hover:bg-black group-hover:text-white transition-all duration-300 border border-gray-100">
+                {stat.icon}
+              </div>
+            </div>
+            <div className="text-3xl font-black text-gray-950 tracking-tight">{stat.value}</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
+              {stat.trend}
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{purchases.length}</div>
-          <div className="text-xs text-gray-400 mt-1">Total acumulado</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Volumen Total</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <CreditCard size={18} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900">
-            ${purchases.reduce((acc, p) => acc + (Number(p.total) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">En ventas brutas</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm text-gray-950">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-400">Pagadas</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-950">
-              <CheckCircle size={18} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-950">
-            {purchases.filter(p => p.estado === 'PAGADA').length}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Éxito en cobros</div>
-        </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
+        <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4 bg-gray-50/20">
            <div className="flex-1 max-w-sm relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Buscar compra..." 
-                className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5" 
+                placeholder="Buscar compra por ID, cliente o estado..." 
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
            <select 
-             className="w-full sm:w-auto px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 outline-none hover:bg-gray-100/50 transition-colors"
+             className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
            >
@@ -251,19 +239,19 @@ const Purchases: React.FC = () => {
              <option value="Activo">Activos (Historial)</option>
              <option value="Inactivo">Archivados (Inactivos)</option>
            </select>
-           <div className="ml-auto text-xs text-gray-400 font-medium">{filteredPurchases.length} compras</div>
+           <div className="ml-auto text-xs font-bold text-gray-400 uppercase tracking-wider">{filteredPurchases.length} compras</div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 text-gray-400 text-[10px] font-bold uppercase tracking-wider border-b border-gray-50">
-                <th className="px-6 py-3">ID Compra</th>
-                <th className="px-6 py-3">Cliente</th>
-                <th className="px-6 py-3">Fecha</th>
-                <th className="px-6 py-3">Total</th>
-                <th className="px-6 py-3">Estado</th>
-                <th className="px-6 py-3 text-right">Acciones</th>
+              <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
+                <th className="px-6 py-4">ID Compra</th>
+                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4">Fecha</th>
+                <th className="px-6 py-4">Total</th>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm text-gray-600">
@@ -278,24 +266,31 @@ const Purchases: React.FC = () => {
                   </td>
                 </tr>
               ) : filteredPurchases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(purchase => (
-                <tr key={purchase.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={purchase.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
                   <td className="px-6 py-4 font-mono text-xs">
                     <button
                       onClick={() => setSelectedPurchase(purchase)}
-                      className="font-mono text-black hover:underline focus:outline-none font-bold text-left"
+                      className="font-mono text-black hover:underline focus:outline-none font-bold text-left bg-gray-50 hover:bg-white border border-gray-150 hover:border-black/20 px-2.5 py-1 rounded-lg transition-all"
                       title="Ver detalle de la compra"
                     >
                       #INV-{purchase.id.substring(0, 8)}
                     </button>
                   </td>
-                  <td className="px-6 py-4 font-medium text-gray-900">{getUserName(purchase)}</td>
-                  <td className="px-6 py-4 flex items-center gap-2">
-                    <Calendar size={14} className="text-gray-300" />
-                    {new Date(purchase.fecha_compra).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-gray-900">${purchase.total}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 w-fit border transition-all ${purchase.estado === 'PAGADA'
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{getUserName(purchase)}</span>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Cliente del sistema</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-500 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={13} className="text-gray-400" />
+                      {new Date(purchase.fecha_compra).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-bold text-gray-950">${Number(purchase.total).toFixed(2)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase flex items-center gap-1 w-fit border transition-all ${purchase.estado === 'PAGADA'
                         ? 'bg-black text-white border-black/10'
                         : 'bg-gray-100 text-gray-700 border-gray-200'
                       }`}>
@@ -304,29 +299,29 @@ const Purchases: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2.5">
                       <button
                         onClick={() => setSelectedPurchase(purchase)}
-                        className="p-1.5 text-gray-300 hover:text-black hover:bg-gray-50 rounded-lg transition-all"
+                        className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                         title="Ver detalle"
                       >
-                        <Eye size={16} />
+                        <Eye size={15} />
                       </button>
                       {archivedIds.includes(purchase.id) ? (
                         <button
                           onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'restore' })}
-                          className="p-1.5 text-gray-300 hover:text-green-500 hover:bg-gray-50 rounded-lg transition-all"
+                          className="p-2 text-gray-400 hover:text-green-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                           title="Restaurar compra"
                         >
-                          <RotateCcw size={16} />
+                          <RotateCcw size={15} />
                         </button>
                       ) : (
                         <button
                           onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'archive' })}
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-gray-50 rounded-lg transition-all"
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                           title="Archivar compra"
                         >
-                          <Archive size={16} />
+                          <Archive size={15} />
                         </button>
                       )}
                     </div>
@@ -337,7 +332,7 @@ const Purchases: React.FC = () => {
           </table>
         </div>
 
-        <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
+        <div className="p-4 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50/20">
           <div>
             Mostrando {filteredPurchases.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
             {Math.min(currentPage * itemsPerPage, filteredPurchases.length)} de {filteredPurchases.length} compras
@@ -346,7 +341,7 @@ const Purchases: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronLeft size={16} />
             </button>
@@ -355,7 +350,7 @@ const Purchases: React.FC = () => {
                 <button 
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150'}`}
                 >
                   {page}
                 </button>
@@ -364,7 +359,7 @@ const Purchases: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredPurchases.length / itemsPerPage)))}
               disabled={currentPage === Math.ceil(filteredPurchases.length / itemsPerPage) || filteredPurchases.length === 0}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronRight size={16} />
             </button>

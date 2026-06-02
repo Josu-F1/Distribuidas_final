@@ -162,70 +162,47 @@ const Products: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Total productos</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <Package size={18} />
+        {[
+          { label: 'Total productos', value: products.length, icon: <Package size={18} />, trend: 'En el catálogo' },
+          { label: 'Productos Activos', value: products.filter(p => p.activo).length, icon: <Layout size={18} />, trend: 'Visibles en tienda' },
+          { label: 'Fuera de Stock', value: products.filter(p => p.stock === 0).length, icon: <Layers size={18} />, trend: 'Requiere atención' },
+          { label: 'Precio Promedio', value: products.length > 0 
+              ? `$${(products.reduce((acc, p) => acc + Number(p.precio || 0), 0) / products.length).toFixed(2)}` 
+              : '$0.00', icon: <DollarSign size={18} />, trend: 'Valor medio' }
+        ].map((stat, i) => (
+          <div 
+            key={i} 
+            className="group bg-gradient-to-b from-white to-gray-50/30 p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-gray-250 transition-all duration-300 hover:-translate-y-0.5 cursor-default"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
+              <div className="bg-gray-50 p-2 rounded-xl text-gray-600 group-hover:bg-black group-hover:text-white transition-all duration-300 border border-gray-100">
+                {stat.icon}
+              </div>
+            </div>
+            <div className="text-3xl font-black text-gray-950 tracking-tight">{stat.value}</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
+              {stat.trend}
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
-          <div className="text-xs text-gray-400 mt-1">En el catálogo</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Productos Activos</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <Layout size={18} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900">
-            {products.filter(p => p.activo).length}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Visibles en tienda</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Fuera de Stock</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <Layers size={18} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900">
-            {products.filter(p => p.stock === 0).length}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Requiere atención</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-medium text-gray-500">Precio Promedio</span>
-            <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
-              <DollarSign size={18} />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900">
-            ${products.length > 0 
-              ? (products.reduce((acc, p) => acc + Number(p.precio || 0), 0) / products.length).toFixed(2) 
-              : '0.00'}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Valor medio</div>
-        </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
+        <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4 bg-gray-50/20">
            <div className="flex-1 max-w-sm relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Buscar productos..." 
-                className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5" 
+                placeholder="Buscar productos por nombre o descripción..." 
+                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
            <select 
-             className="w-full sm:w-auto px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 outline-none hover:bg-gray-100/50 transition-colors"
+             className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
            >
@@ -233,18 +210,18 @@ const Products: React.FC = () => {
              <option value="Activo">Activo</option>
              <option value="Inactivo">Inactivo</option>
            </select>
-           <div className="ml-auto text-xs text-gray-400 font-medium">{filteredProducts.length} productos</div>
+           <div className="ml-auto text-xs font-bold text-gray-400 uppercase tracking-wider">{filteredProducts.length} productos</div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 text-gray-400 text-[10px] font-bold uppercase tracking-wider border-b border-gray-50">
-                <th className="px-6 py-3">Producto</th>
-                <th className="px-6 py-3">Precio</th>
-                <th className="px-6 py-3">Stock</th>
-                <th className="px-6 py-3">Estado</th>
-                <th className="px-6 py-3 text-right">Acciones</th>
+              <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
+                <th className="px-6 py-4">Producto</th>
+                <th className="px-6 py-4">Precio</th>
+                <th className="px-6 py-4">Stock</th>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm text-gray-600">
@@ -257,7 +234,7 @@ const Products: React.FC = () => {
                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron productos.</td>
                 </tr>
               ) : filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(product => (
-                <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={product.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
                   <td className="px-6 py-4">
                      <div className="flex items-center gap-3">
                        {(() => {
@@ -271,7 +248,7 @@ const Products: React.FC = () => {
                              <img 
                                src={imgUrl} 
                                alt={product.nombre} 
-                               className="w-10 h-10 object-cover rounded-lg border border-gray-100 bg-gray-50 flex-shrink-0"
+                               className="w-12 h-12 object-cover rounded-xl border border-gray-100 bg-gray-50 flex-shrink-0 group-hover:scale-105 transition-all duration-300 shadow-sm"
                                onError={() => {
                                  setImageErrors(prev => ({ ...prev, [product.id]: true }));
                                }}
@@ -279,20 +256,20 @@ const Products: React.FC = () => {
                            );
                          }
                          return (
-                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
-                             <ImageIcon size={18} />
+                           <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0 border border-gray-150 group-hover:bg-white group-hover:border-black/10 transition-all duration-300">
+                             <ImageIcon size={20} />
                            </div>
                          );
                        })()}
                        <div className="flex flex-col">
-                         <span className="font-semibold text-gray-900">{product.nombre}</span>
-                         <span className="text-xs text-gray-400 line-clamp-1">{product.descripcion}</span>
+                         <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{product.nombre}</span>
+                         <span className="text-xs text-gray-400 line-clamp-1 mt-0.5">{product.descripcion || 'Sin descripción'}</span>
                        </div>
                      </div>
                    </td>
-                  <td className="px-6 py-4 font-medium text-gray-900">${product.precio}</td>
-                  <td className="px-6 py-4">
-                    <span className={product.stock < 5 ? 'text-red-500 font-bold' : ''}>
+                  <td className="px-6 py-4 font-bold text-gray-955">${Number(product.precio).toFixed(2)}</td>
+                  <td className="px-6 py-4 font-medium">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${product.stock < 5 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-gray-50 text-gray-700 border border-gray-100'}`}>
                       {product.stock} uds.
                     </span>
                   </td>
@@ -307,30 +284,32 @@ const Products: React.FC = () => {
                           toast.error('Error al actualizar estado');
                         }
                       }}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all ${
                         product.activo 
                           ? 'bg-black text-white border-black/10 hover:bg-black/90' 
                           : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
                       }`}
                     >
-                      <div className={`w-1 h-1 rounded-full ${product.activo ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
+                      <div className={`w-1.5 h-1.5 rounded-full ${product.activo ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
                       {product.activo ? 'ACTIVO' : 'DESACTIVADO'}
                     </button>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 text-gray-300">
+                    <div className="flex justify-end gap-2.5">
                        <button 
-                         className="hover:text-black transition-colors"
+                         className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                          onClick={() => handleOpenEdit(product)}
                        >
-                         <Edit2 size={16} />
+                         <Edit2 size={15} />
                        </button>
                        <button 
-                         className={`transition-colors ${product.activo ? 'hover:text-red-500' : 'hover:text-green-500'}`}
+                         className={`p-2 text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all ${
+                           product.activo ? 'hover:text-red-500' : 'hover:text-green-500'
+                         }`}
                          onClick={() => confirmDelete(product)}
                          title={product.activo ? "Desactivar" : "Activar"}
                        >
-                         <Power size={16} />
+                         <Power size={15} />
                        </button>
                     </div>
                   </td>
@@ -340,7 +319,7 @@ const Products: React.FC = () => {
           </table>
         </div>
 
-        <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
+        <div className="p-4 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50/20">
           <div>
             Mostrando {filteredProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
             {Math.min(currentPage * itemsPerPage, filteredProducts.length)} de {filteredProducts.length} productos
@@ -349,7 +328,7 @@ const Products: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronLeft size={16} />
             </button>
@@ -358,7 +337,7 @@ const Products: React.FC = () => {
                 <button 
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150'}`}
                 >
                   {page}
                 </button>
@@ -367,7 +346,7 @@ const Products: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProducts.length / itemsPerPage)))}
               disabled={currentPage === Math.ceil(filteredProducts.length / itemsPerPage) || filteredProducts.length === 0}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronRight size={16} />
             </button>

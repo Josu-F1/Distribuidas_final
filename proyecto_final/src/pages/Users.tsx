@@ -172,39 +172,45 @@ const Users: React.FC = () => {
     <div>
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Usuarios</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Usuarios</h1>
           <p className="text-gray-500 mt-1">Administra los miembros y sus permisos de acceso.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-sm font-medium text-gray-500">{stat.label}</span>
-              <div className="bg-gray-50 p-2 rounded-lg text-gray-600">
+          <div 
+            key={i} 
+            className="group bg-gradient-to-b from-white to-gray-50/30 p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-gray-250 transition-all duration-300 hover:-translate-y-0.5 cursor-default"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
+              <div className="bg-gray-50 p-2 rounded-xl text-gray-600 group-hover:bg-black group-hover:text-white transition-all duration-300 border border-gray-100">
                 {stat.icon}
               </div>
             </div>
-            <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-xs text-gray-400 mt-1">{stat.trend}</div>
+            <div className="text-3xl font-black text-gray-950 tracking-tight">{stat.value}</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
+              {stat.trend}
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex items-center gap-4">
-           <div className="flex-1 max-w-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
+        <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4 bg-gray-50/20">
+           <div className="flex-1 max-w-sm relative w-full">
               <input 
                 type="text" 
-                placeholder="Buscar usuario..." 
-                className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5" 
+                placeholder="Buscar usuario por nombre o correo..." 
+                className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
            <select 
-             className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 outline-none"
+             className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
            >
@@ -212,13 +218,13 @@ const Users: React.FC = () => {
              <option value="Activo">Activo</option>
              <option value="Inactivo">Inactivo</option>
            </select>
-           <div className="ml-auto text-xs text-gray-400 font-medium">{filteredUsers.length} clientes</div>
+           <div className="ml-auto text-xs font-bold text-gray-400 uppercase tracking-wider">{filteredUsers.length} clientes</div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white text-gray-400 text-[11px] font-bold uppercase tracking-wider border-b border-gray-100">
+              <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
                 <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Correo</th>
                 <th className="px-6 py-4">Estado</th>
@@ -236,20 +242,23 @@ const Users: React.FC = () => {
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron usuarios</td>
                 </tr>
               ) : filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group text-sm text-gray-600">
+                <tr key={user.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xs uppercase">
+                      <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center font-bold text-gray-600 text-xs uppercase border border-gray-100 group-hover:border-black/10 group-hover:bg-white transition-all duration-300">
                         {user.nombres.charAt(0)}
                       </div>
-                      <span className="font-semibold text-gray-900">{user.nombres} {user.apellidos}</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{user.nombres} {user.apellidos}</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Cliente</span>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">{user.email}</td>
+                  <td className="px-6 py-4 font-medium">{user.email}</td>
                   <td className="px-6 py-4">
                     <button 
                       onClick={() => toggleStatus(user)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all ${
                         user.estado 
                           ? 'bg-black text-white border-black/10 hover:bg-black/90' 
                           : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
@@ -259,25 +268,25 @@ const Users: React.FC = () => {
                       {user.estado ? 'ACTIVO' : 'DESACTIVADO'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-gray-400 text-xs">
+                  <td className="px-6 py-4 text-gray-450 text-xs font-semibold">
                     {new Date(user.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2.5">
                        <button 
-                         className="p-1.5 text-gray-300 hover:text-black hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                         className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                          onClick={() => handleEditClick(user)}
                        >
-                         <Edit2 size={16} />
+                         <Edit2 size={15} />
                        </button>
                        <button 
-                         className={`p-1.5 text-gray-300 hover:bg-white hover:shadow-sm rounded-lg transition-all ${
+                         className={`p-2 text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all ${
                            user.estado ? 'hover:text-red-500' : 'hover:text-green-500'
                          }`}
                          onClick={() => confirmDelete(user)}
                          title={user.estado ? "Desactivar" : "Activar"}
                        >
-                         {user.estado ? <UserX size={16} /> : <UserCheck size={16} />}
+                         {user.estado ? <UserX size={15} /> : <UserCheck size={15} />}
                        </button>
                     </div>
                   </td>
@@ -287,7 +296,7 @@ const Users: React.FC = () => {
           </table>
         </div>
 
-        <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
+        <div className="p-4 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-50/20">
           <div>
             Mostrando {filteredUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
             {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length} clientes
@@ -296,7 +305,7 @@ const Users: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronLeft size={16} />
             </button>
@@ -305,7 +314,7 @@ const Users: React.FC = () => {
                 <button 
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150'}`}
                 >
                   {page}
                 </button>
@@ -314,7 +323,7 @@ const Users: React.FC = () => {
             <button 
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredUsers.length / itemsPerPage)))}
               disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage) || filteredUsers.length === 0}
-              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
             >
               <ChevronRight size={16} />
             </button>
