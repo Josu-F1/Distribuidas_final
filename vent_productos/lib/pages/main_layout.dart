@@ -311,14 +311,6 @@ class CartModal extends StatelessWidget {
                               '\$${(item.product.precio * item.quantity).toStringAsFixed(2)}',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                             ),
-                            const SizedBox(width: 12),
-                            // Eliminar del carrito
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
-                              onPressed: () => cart.removeFromCart(item.product.id),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
                           ],
                         ),
                       );
