@@ -86,13 +86,13 @@ const Users: React.FC = () => {
       return;
     }
 
-    if (trimmedNombres.length > 30) {
-      toast.error('El nombre no puede tener más de 30 caracteres');
+    if (trimmedNombres.length > 15) {
+      toast.error('El nombre no puede tener más de 15 caracteres');
       return;
     }
 
-    if (trimmedApellidos.length > 30) {
-      toast.error('El apellido no puede tener más de 30 caracteres');
+    if (trimmedApellidos.length > 15) {
+      toast.error('El apellido no puede tener más de 15 caracteres');
       return;
     }
 
@@ -380,7 +380,7 @@ const Users: React.FC = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nombres</label>
                   <input
                     type="text"
-                    maxLength={30}
+                    maxLength={15}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                     value={editFormData.nombres}
                     onChange={(e) => setEditFormData({ ...editFormData, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') })}
@@ -391,7 +391,7 @@ const Users: React.FC = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Apellidos</label>
                   <input
                     type="text"
-                    maxLength={30}
+                    maxLength={15}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                     value={editFormData.apellidos}
                     onChange={(e) => setEditFormData({ ...editFormData, apellidos: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') })}

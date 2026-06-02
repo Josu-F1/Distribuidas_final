@@ -60,13 +60,13 @@ const SessionInfo: React.FC = () => {
       return;
     }
 
-    if (trimmedNombres.length > 30) {
-      toast.error('El nombre no puede tener más de 30 caracteres');
+    if (trimmedNombres.length > 15) {
+      toast.error('El nombre no puede tener más de 15 caracteres');
       return;
     }
 
-    if (trimmedApellidos.length > 30) {
-      toast.error('El apellido no puede tener más de 30 caracteres');
+    if (trimmedApellidos.length > 15) {
+      toast.error('El apellido no puede tener más de 15 caracteres');
       return;
     }
 
@@ -234,7 +234,7 @@ const SessionInfo: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
-                      maxLength={30}
+                      maxLength={15}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 text-sm font-semibold text-gray-900"
                       value={nombres}
                       onChange={(e) => setNombres(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
@@ -252,7 +252,7 @@ const SessionInfo: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
-                      maxLength={30}
+                      maxLength={15}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 text-sm font-semibold text-gray-900"
                       value={apellidos}
                       onChange={(e) => setApellidos(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
