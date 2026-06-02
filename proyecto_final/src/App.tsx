@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
 import Users from './pages/Users';
@@ -17,7 +16,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Home />} />
             <Route path="users" element={<Users />} />

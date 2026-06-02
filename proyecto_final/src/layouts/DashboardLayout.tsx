@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../services/AuthContext';
 import { 
   Users as UsersIcon, 
   ShoppingBag, 
@@ -12,6 +13,23 @@ import {
 
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500 font-medium italic animate-pulse">Cargando sesión...</div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex flex-col font-sans">

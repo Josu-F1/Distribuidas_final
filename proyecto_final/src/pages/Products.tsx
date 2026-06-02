@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { getProducts, deleteProduct, updateProduct, createProduct } from '../services/api';
 import { Product } from '../types';
 import toast from 'react-hot-toast';
-import { Plus, Package, DollarSign, Layout, Layers, Edit2, Trash2, Search, Filter, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Package, DollarSign, Layout, Layers, Edit2, Power, Search, Filter, X, Image as ImageIcon } from 'lucide-react';
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   // Estados para el modal (edición o creación)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -151,7 +152,7 @@ const Products: React.FC = () => {
               <Layers size={18} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-red-500">
+          <div className="text-2xl font-bold text-gray-900">
             {products.filter(p => p.stock === 0).length}
           </div>
           <div className="text-xs text-gray-400 mt-1">Requiere atención</div>
@@ -209,11 +210,37 @@ const Products: React.FC = () => {
               ) : filteredProducts.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">{product.nombre}</span>
-                      <span className="text-xs text-gray-400 line-clamp-1">{product.descripcion}</span>
-                    </div>
-                  </td>
+                     <div className="flex items-center gap-3">
+                       {(() => {
+                         let imgUrl = product.imagen_url || (product as any).imagen || (product as any).image_url || (product as any).image;
+                         if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('data:image')) {
+                           imgUrl = imgUrl.replace(/\s/g, '');
+                         }
+                         const hasError = imageErrors[product.id];
+                         if (imgUrl && !hasError) {
+                           return (
+                             <img 
+                               src={imgUrl} 
+                               alt={product.nombre} 
+                               className="w-10 h-10 object-cover rounded-lg border border-gray-100 bg-gray-50 flex-shrink-0"
+                               onError={() => {
+                                 setImageErrors(prev => ({ ...prev, [product.id]: true }));
+                               }}
+                             />
+                           );
+                         }
+                         return (
+                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+                             <ImageIcon size={18} />
+                           </div>
+                         );
+                       })()}
+                       <div className="flex flex-col">
+                         <span className="font-semibold text-gray-900">{product.nombre}</span>
+                         <span className="text-xs text-gray-400 line-clamp-1">{product.descripcion}</span>
+                       </div>
+                     </div>
+                   </td>
                   <td className="px-6 py-4 font-medium text-gray-900">${product.precio}</td>
                   <td className="px-6 py-4">
                     <span className={product.stock < 5 ? 'text-red-500 font-bold' : ''}>
@@ -231,13 +258,13 @@ const Products: React.FC = () => {
                           toast.error('Error al actualizar estado');
                         }
                       }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-black transition-all ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
                         product.activo 
-                          ? 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-100' 
-                          : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100'
+                          ? 'bg-black text-white border-black/10 hover:bg-black/90' 
+                          : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
                       }`}
                     >
-                      <div className={`w-1 h-1 rounded-full ${product.activo ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <div className={`w-1 h-1 rounded-full ${product.activo ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
                       {product.activo ? 'ACTIVO' : 'DESACTIVADO'}
                     </button>
                   </td>
@@ -250,10 +277,11 @@ const Products: React.FC = () => {
                          <Edit2 size={16} />
                        </button>
                        <button 
-                         className="hover:text-red-500 transition-colors"
+                         className={`transition-colors ${product.activo ? 'hover:text-red-500' : 'hover:text-green-500'}`}
                          onClick={() => confirmDelete(product)}
+                         title={product.activo ? "Desactivar" : "Activar"}
                        >
-                         <Trash2 size={16} />
+                         <Power size={16} />
                        </button>
                     </div>
                   </td>
@@ -345,17 +373,6 @@ const Products: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 py-2 bg-gray-50/50 p-3 rounded-xl border border-gray-50">
-                <input
-                  type="checkbox"
-                  id="prod-activo"
-                  checked={formData.activo}
-                  onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black"
-                />
-                <label htmlFor="prod-activo" className="text-sm font-bold text-gray-700">Producto Activo en Tienda</label>
-              </div>
-
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -381,9 +398,9 @@ const Products: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 p-6 text-center">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              productToDelete?.activo ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'
+              productToDelete?.activo ? 'bg-gray-100 text-gray-900' : 'bg-black text-white'
             }`}>
-              {productToDelete?.activo ? <Trash2 size={32} /> : <Package size={32} />}
+              {productToDelete?.activo ? <Power size={32} /> : <Package size={32} />}
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               {productToDelete?.activo ? '¿Desactivar producto?' : '¿Activar producto?'}
@@ -401,9 +418,7 @@ const Products: React.FC = () => {
               </button>
               <button
                 onClick={handleDelete}
-                className={`flex-1 px-4 py-2.5 text-white rounded-xl text-sm font-bold transition-all shadow-sm ${
-                  productToDelete?.activo ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
-                }`}
+                className="flex-1 px-4 py-2.5 text-white bg-black hover:bg-black/90 rounded-xl text-sm font-bold transition-all shadow-sm"
               >
                 {productToDelete?.activo ? 'Desactivar' : 'Activar'}
               </button>

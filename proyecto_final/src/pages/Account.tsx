@@ -9,7 +9,7 @@ const Account: React.FC = () => {
         <p className="text-gray-500 mt-1">Administra tu información de acceso y configuración del sistema.</p>
       </div>
       
-      <div className="flex justify-start">
+      <div className="flex justify-center w-full">
         <SessionInfo />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Layout, Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebase';
@@ -106,7 +106,6 @@ const Login: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                <a href="#" className="text-xs text-blue-600 hover:underline">¿Olvidaste tu contraseña?</a>
               </div>
               <div className="relative">
                 <input
@@ -133,13 +132,6 @@ const Login: React.FC = () => {
             >
               Iniciar sesión
             </button>
-
-            <p className="mt-6 text-center text-sm text-gray-500">
-              ¿No tienes una cuenta?{' '}
-              <Link to="/register" className="text-black font-bold hover:underline">
-                Regístrate aquí
-              </Link>
-            </p>
           </form>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../services/AuthContext';
 import { 
   Users, 
   Package, 
@@ -7,91 +8,90 @@ import {
   UserCircle, 
   ArrowRight,
   ShieldCheck,
-  TrendingUp,
-  CreditCard
+  TrendingUp
 } from 'lucide-react';
 
 const homeCards = [
   {
     title: 'Gestionar Usuarios',
     description: 'Administra roles, estados y accesos del personal.',
-    icon: <Users className="text-blue-500" size={24} />,
+    icon: <Users className="text-black" size={24} />,
     path: '/dashboard/users',
-    color: 'bg-blue-50',
-    borderColor: 'border-blue-100',
+    color: 'bg-gray-50',
+    borderColor: 'border-gray-200/60',
     stats: 'Control Total'
   },
   {
     title: 'Catálogo de Productos',
     description: 'Controla el inventario, precios y visualización.',
-    icon: <Package className="text-emerald-500" size={24} />,
+    icon: <Package className="text-black" size={24} />,
     path: '/dashboard/products',
-    color: 'bg-emerald-50',
-    borderColor: 'border-emerald-100',
+    color: 'bg-gray-50',
+    borderColor: 'border-gray-200/60',
     stats: 'Actualizado'
   },
   {
     title: 'Reportes de Compras',
     description: 'Visualiza el historial de transacciones y estados.',
-    icon: <ShoppingCart className="text-amber-500" size={24} />,
+    icon: <ShoppingCart className="text-black" size={24} />,
     path: '/dashboard/purchases',
-    color: 'bg-amber-50',
-    borderColor: 'border-amber-100',
+    color: 'bg-gray-50',
+    borderColor: 'border-gray-200/60',
     stats: 'Monitoreo'
   },
   {
     title: 'Información de Cuenta',
     description: 'Verifica tu sesión y credenciales de acceso JWT.',
-    icon: <UserCircle className="text-purple-500" size={24} />,
+    icon: <UserCircle className="text-black" size={24} />,
     path: '/dashboard/account',
-    color: 'bg-purple-50',
-    borderColor: 'border-purple-100',
+    color: 'bg-gray-50',
+    borderColor: 'border-gray-200/60',
     stats: 'Mi Perfil'
   }
 ];
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return '¡Buenos días';
+    if (hour < 18) return '¡Buenas tardes';
+    return '¡Buenas noches';
+  };
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Administrador';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="max-w-2xl">
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-          Bienvenido a <span className="text-black">ProductTech</span>
+          {getGreeting()}, <span className="text-black/60 font-semibold">{displayName}!</span>
         </h1>
         <p className="text-lg text-gray-500 mt-3 leading-relaxed">
-          Has accedido al panel de administración centralizado. Desde aquí puedes gestionar todos los recursos estratégicos de la plataforma con herramientas de alta precisión.
+          Has accedido al panel de administración centralizado de <span className="font-semibold text-black">ProductTech</span>. Desde aquí puedes gestionar todos los recursos estratégicos con herramientas de alta precisión y estilo simplificado.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-             <ShieldCheck className="text-gray-900" size={20} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="bg-black text-white p-3 rounded-xl border border-black/10">
+             <ShieldCheck size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Seguridad</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Seguridad</p>
             <p className="text-sm font-bold text-gray-900">Protección Activa</p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-             <TrendingUp className="text-gray-900" size={20} />
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="bg-black text-white p-3 rounded-xl border border-black/10">
+             <TrendingUp size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Rendimiento</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rendimiento</p>
             <p className="text-sm font-bold text-gray-900">Alta Disponibilidad</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-             <CreditCard className="text-gray-900" size={20} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Plataforma</p>
-            <p className="text-sm font-bold text-gray-900">API Conectada</p>
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@ const Home: React.FC = () => {
           <div 
             key={idx}
             onClick={() => navigate(card.path)}
-            className="group relative bg-white border border-gray-100 p-8 rounded-3xl hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer overflow-hidden"
+            className="group relative bg-white border border-gray-100 p-8 rounded-3xl hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer overflow-hidden hover:-translate-y-1 duration-300"
           >
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
               {React.cloneElement(card.icon as React.ReactElement<any>, { size: 120 })}
