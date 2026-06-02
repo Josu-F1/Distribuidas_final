@@ -69,17 +69,18 @@ class ApiService {
     // URL de la API de facturación pública en Render
     const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
     
+    final safeCompraId = compraId.substring(0, compraId.length >= 8 ? 8 : compraId.length).toUpperCase();
     final payload = {
-      'numero': 'F001-${compraId.substring(0, 8).toUpperCase()}',
+      'numero': 'F001-$safeCompraId',
       'fecha': DateTime.now().toIso8601String().split('T')[0],
       'cliente': {
-        'nombre': clientName,
+        'nombre': clientName.trim().isNotEmpty ? clientName : 'Cliente Móvil',
         'cedula_ruc': '1899999999', // Podría ser dinámico si tuviéramos perfil
         'correo': userEmail,
         'direccion': 'Ecuador'
       },
       'productos': items.map((item) => {
-        'nombre': item.product.nombre,
+        'nombre': item.product.nombre.trim().isNotEmpty ? item.product.nombre : 'Producto sin nombre',
         'cantidad': item.quantity,
         'precio_unitario': item.product.precio,
       }).toList()
@@ -92,6 +93,9 @@ class ApiService {
         body: jsonEncode(payload),
       );
       print('Respuesta servicio facturación: ${response.statusCode}');
+      if (response.statusCode != 200) {
+        print('Error en la respuesta del servicio de facturación: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
       print('Error al contactar servicio de facturación: $e');
     }
@@ -100,19 +104,25 @@ class ApiService {
   Future<String?> generateInvoiceFromPurchase(Purchase purchase, String userEmail, String clientName) async {
     const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
     
+    final safePurchaseId = purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase();
+    
+    // Validar y parsear la fecha de forma robusta. Si es nula o inválida, usar la fecha actual.
+    final parsedDate = DateTime.tryParse(purchase.fechaCompra);
+    final finalFecha = parsedDate != null 
+        ? purchase.fechaCompra.split('T')[0] 
+        : DateTime.now().toIso8601String().split('T')[0];
+
     final payload = {
-      'numero': 'F001-${purchase.id.substring(0, 8).toUpperCase()}',
-      'fecha': purchase.fechaCompra.isNotEmpty 
-          ? purchase.fechaCompra.split('T')[0] 
-          : DateTime.now().toIso8601String().split('T')[0],
+      'numero': 'F001-$safePurchaseId',
+      'fecha': finalFecha,
       'cliente': {
-        'nombre': clientName,
+        'nombre': clientName.trim().isNotEmpty ? clientName : 'Cliente Móvil',
         'cedula_ruc': '1899999999',
         'correo': userEmail,
         'direccion': 'Ecuador'
       },
       'productos': purchase.detalles.map((detail) => {
-        'nombre': detail.productoNombre,
+        'nombre': detail.productoNombre.trim().isNotEmpty ? detail.productoNombre : 'Producto sin nombre',
         'cantidad': detail.cantidad,
         'precio_unitario': detail.precioUnitario,
       }).toList()
@@ -126,8 +136,10 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         return response.body; // Retorna el XML
+      } else {
+        print('Error en la respuesta del servicio de facturación: ${response.statusCode} - ${response.body}');
+        return null;
       }
-      return null;
     } catch (e) {
       print('Error al contactar servicio de facturación: $e');
       return null;

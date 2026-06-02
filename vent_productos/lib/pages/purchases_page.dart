@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +29,6 @@ class PurchasesPage extends StatefulWidget {
 class _PurchasesPageState extends State<PurchasesPage> {
   final ApiService _apiService = ApiService();
   late Future<PurchasesData> _purchasesFuture;
-  List<Product> _allProducts = [];
 
   @override
   void initState() {
@@ -55,11 +53,36 @@ class _PurchasesPageState extends State<PurchasesPage> {
           return pEmail == authEmail && authEmail.isNotEmpty;
         }).toList();
 
-        // 2. Resolver detalles algorítmicamente para cada compra si vienen vacíos
+        // 2. Resolver detalles y nombres de productos para cada compra
         for (var purchase in userPurchases) {
           if (purchase.detalles.isEmpty) {
             final resolvedDetails = _resolveDetails(purchase, products);
             purchase.detalles.addAll(resolvedDetails);
+          } else {
+            for (var i = 0; i < purchase.detalles.length; i++) {
+              final detail = purchase.detalles[i];
+              if (detail.productoNombre.trim().isEmpty) {
+                final matchedProd = products.firstWhere(
+                  (p) => p.id == detail.productoId,
+                  orElse: () => Product(
+                    id: detail.productoId,
+                    nombre: 'Producto #${detail.productoId.substring(0, detail.productoId.length >= 5 ? 5 : detail.productoId.length)}',
+                    descripcion: '',
+                    precio: detail.precioUnitario,
+                    stock: 0,
+                    categoria: '',
+                    activo: false,
+                    imagenUrl: '',
+                  ),
+                );
+                purchase.detalles[i] = PurchaseDetail(
+                  productoId: detail.productoId,
+                  productoNombre: matchedProd.nombre,
+                  cantidad: detail.cantidad,
+                  precioUnitario: detail.precioUnitario,
+                );
+              }
+            }
           }
         }
 
@@ -75,7 +98,10 @@ class _PurchasesPageState extends State<PurchasesPage> {
         return PurchasesData(
           filtered: userPurchases,
           totalCount: purchases.length,
-          userIdsInDb: purchases.map((p) => '${p.id.substring(0, 8).toUpperCase()}: "${p.usuarioEmail}"').toList(),
+          userIdsInDb: purchases.map((p) {
+            final safeId = p.id.substring(0, p.id.length >= 8 ? 8 : p.id.length).toUpperCase();
+            return '$safeId: "${p.usuarioEmail}"';
+          }).toList(),
           rawSample: rawSample,
         );
       });
@@ -284,7 +310,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Factura #${purchase.id.substring(0, 8).toUpperCase()}',
+                              'Factura #${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}',
                               style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15),
                             ),
                             const SizedBox(height: 4),
@@ -357,7 +383,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        detail.productoNombre.isNotEmpty ? detail.productoNombre : 'Producto #${detail.productoId.substring(0, 5)}',
+                                        detail.productoNombre.isNotEmpty 
+                                            ? detail.productoNombre 
+                                            : 'Producto #${detail.productoId.substring(0, detail.productoId.length >= 5 ? 5 : detail.productoId.length)}',
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                       ),
                                       const SizedBox(height: 2),
