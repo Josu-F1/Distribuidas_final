@@ -96,22 +96,28 @@ class PurchaseDetail {
 class Purchase {
   final String id;
   final String usuarioId;
+  final String usuarioEmail;
+  final String usuarioNombres;
   final String fechaCompra;
   final double subtotal;
   final double iva;
   final double total;
   final String estado;
   final List<PurchaseDetail> detalles;
+  final Map<String, dynamic>? rawJson;
 
   Purchase({
     required this.id,
     required this.usuarioId,
+    required this.usuarioEmail,
+    required this.usuarioNombres,
     required this.fechaCompra,
     required this.subtotal,
     required this.iva,
     required this.total,
     required this.estado,
     required this.detalles,
+    this.rawJson,
   });
 
   factory Purchase.fromJson(Map<String, dynamic> json) {
@@ -129,12 +135,15 @@ class Purchase {
                   json['cliente_id'] ?? 
                   json['clienteId'] ?? 
                   '').toString(),
+      usuarioEmail: (json['usuario_email'] ?? '').toString(),
+      usuarioNombres: (json['usuario_nombres'] ?? '').toString(),
       fechaCompra: json['fecha_compra'] ?? '',
       subtotal: double.parse((json['subtotal'] ?? 0).toString()),
       iva: double.parse((json['iva'] ?? 0).toString()),
       total: double.parse(json['total'].toString()),
-      estado: json['estado'],
+      estado: json['estado'] ?? '',
       detalles: detailsList,
+      rawJson: json,
     );
   }
 }

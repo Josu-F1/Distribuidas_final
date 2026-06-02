@@ -1,9 +1,24 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/app_models.dart';
 import '../services/api_service.dart';
 import '../services/auth_provider.dart';
+
+class PurchasesData {
+  final List<Purchase> filtered;
+  final int totalCount;
+  final List<String> userIdsInDb;
+  final String rawSample;
+  PurchasesData({
+    required this.filtered, 
+    required this.totalCount, 
+    required this.userIdsInDb,
+    required this.rawSample,
+  });
+}
 
 class PurchasesPage extends StatefulWidget {
   const PurchasesPage({super.key});
@@ -14,7 +29,8 @@ class PurchasesPage extends StatefulWidget {
 
 class _PurchasesPageState extends State<PurchasesPage> {
   final ApiService _apiService = ApiService();
-  late Future<List<Purchase>> _purchasesFuture;
+  late Future<PurchasesData> _purchasesFuture;
+  List<Product> _allProducts = [];
 
   @override
   void initState() {
@@ -33,16 +49,10 @@ class _PurchasesPageState extends State<PurchasesPage> {
         final products = results[1] as List<Product>;
 
         // 1. Filtrar compras para que solo aparezcan las de este usuario
-        print('DEBUG PURCHASES: Total purchases fetched from API: ${purchases.length}');
-        print('DEBUG AUTH: databaseId=${auth.databaseId}, firebaseUid=${auth.firebaseUid}, email=${auth.email}');
-        for (var p in purchases) {
-          print('DEBUG PURCHASE: id=${p.id}, usuario_id=${p.usuarioId}, total=${p.total}');
-        }
-
         final userPurchases = purchases.where((p) {
-          final pId = p.usuarioId.trim().toLowerCase();
-          return pId == auth.databaseId?.trim().toLowerCase() ||
-                 pId == auth.firebaseUid?.trim().toLowerCase();
+          final pEmail = p.usuarioEmail.trim().toLowerCase();
+          final authEmail = auth.email?.trim().toLowerCase() ?? '';
+          return pEmail == authEmail && authEmail.isNotEmpty;
         }).toList();
 
         // 2. Resolver detalles algorítmicamente para cada compra si vienen vacíos
@@ -53,7 +63,21 @@ class _PurchasesPageState extends State<PurchasesPage> {
           }
         }
 
-        return userPurchases;
+        String rawSample = 'No hay compras en la base de datos.';
+        if (purchases.isNotEmpty) {
+          try {
+            rawSample = const JsonEncoder.withIndent('  ').convert(purchases.first.rawJson);
+          } catch (e) {
+            rawSample = 'Error formateando JSON: $e\nDatos: ${purchases.first.rawJson}';
+          }
+        }
+
+        return PurchasesData(
+          filtered: userPurchases,
+          totalCount: purchases.length,
+          userIdsInDb: purchases.map((p) => '${p.id.substring(0, 8).toUpperCase()}: "${p.usuarioEmail}"').toList(),
+          rawSample: rawSample,
+        );
       });
     });
   }
@@ -91,6 +115,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
@@ -112,7 +137,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
           child: Divider(height: 1, color: Color(0xFFF3F4F6)),
         ),
       ),
-      body: FutureBuilder<List<Purchase>>(
+      body: FutureBuilder<PurchasesData>(
         future: _purchasesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,23 +166,78 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 ),
               ),
             );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
+          } else if (!snapshot.hasData || snapshot.data!.filtered.isEmpty) {
+            final data = snapshot.data!;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 20),
                   Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   const Text(
                     'No tienes compras registradas',
                     style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
                   ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'DEBUG INFO (Filtro de Usuario):',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB91C1C), fontSize: 13),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('• Tus IDs locales:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+                        Text('  - Database ID (Local ID): "${auth.databaseId}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                        Text('  - Firebase UID: "${auth.firebaseUid}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                        Text('  - Correo: "${auth.email}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                        const SizedBox(height: 12),
+                        Text('• Total compras encontradas: ${data.totalCount}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+                        const SizedBox(height: 6),
+                        const Text('• Compras en BD (FACTURA: "USUARIO_EMAIL"):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        if (data.userIdsInDb.isEmpty)
+                          const Text('  - Ninguna compra registrada en la base de datos.', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic))
+                        else
+                          ...data.userIdsInDb.map((item) => Text('  - $item', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.black87))),
+                        const SizedBox(height: 12),
+                        const Text('• Ejemplo de Compra Cruda (Raw Sample):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: SingleChildScrollView(
+                            child: Text(
+                              data.rawSample,
+                              style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.black87),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 ],
               ),
             );
           }
 
-          final purchases = snapshot.data!;
+          final purchases = snapshot.data!.filtered;
 
           return ListView.separated(
             padding: const EdgeInsets.all(24),
