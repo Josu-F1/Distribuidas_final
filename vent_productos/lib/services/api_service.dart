@@ -96,4 +96,41 @@ class ApiService {
       print('Error al contactar servicio de facturación: $e');
     }
   }
+
+  Future<String?> generateInvoiceFromPurchase(Purchase purchase, String userEmail, String clientName) async {
+    const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
+    
+    final payload = {
+      'numero': 'F001-${purchase.id.substring(0, 8).toUpperCase()}',
+      'fecha': purchase.fechaCompra.isNotEmpty 
+          ? purchase.fechaCompra.split('T')[0] 
+          : DateTime.now().toIso8601String().split('T')[0],
+      'cliente': {
+        'nombre': clientName,
+        'cedula_ruc': '1899999999',
+        'correo': userEmail,
+        'direccion': 'Ecuador'
+      },
+      'productos': purchase.detalles.map((detail) => {
+        'nombre': detail.productoNombre,
+        'cantidad': detail.cantidad,
+        'precio_unitario': detail.precioUnitario,
+      }).toList()
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(billingUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        return response.body; // Retorna el XML
+      }
+      return null;
+    } catch (e) {
+      print('Error al contactar servicio de facturación: $e');
+      return null;
+    }
+  }
 }
