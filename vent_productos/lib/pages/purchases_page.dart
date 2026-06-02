@@ -33,6 +33,12 @@ class _PurchasesPageState extends State<PurchasesPage> {
         final products = results[1] as List<Product>;
 
         // 1. Filtrar compras para que solo aparezcan las de este usuario
+        print('DEBUG PURCHASES: Total purchases fetched from API: ${purchases.length}');
+        print('DEBUG AUTH: databaseId=${auth.databaseId}, firebaseUid=${auth.firebaseUid}, email=${auth.email}');
+        for (var p in purchases) {
+          print('DEBUG PURCHASE: id=${p.id}, usuario_id=${p.usuarioId}, total=${p.total}');
+        }
+
         final userPurchases = purchases.where((p) {
           final pId = p.usuarioId.trim().toLowerCase();
           return pId == auth.databaseId?.trim().toLowerCase() ||
