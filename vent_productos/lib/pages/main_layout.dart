@@ -328,8 +328,26 @@ class CartModal extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total (inc. IVA):', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('\$${cart.total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                    const Text('Subtotal:', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                    Text('\$${cart.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('IVA (15%):', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                    Text('\$${cart.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: Color(0xFFE5E7EB), height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total (inc. IVA):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('\$${cart.total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.green)),
                   ],
                 ),
                 const SizedBox(height: 20),
