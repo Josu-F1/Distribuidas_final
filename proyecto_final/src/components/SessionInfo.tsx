@@ -103,7 +103,7 @@ const SessionInfo: React.FC = () => {
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
           rol: dbUser.rol,
-          telefono: phone || null,
+          telefono: phone || undefined,
           estado: dbUser.estado
         });
         setDbUser(updated);

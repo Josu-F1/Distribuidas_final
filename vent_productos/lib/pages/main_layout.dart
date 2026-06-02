@@ -137,7 +137,7 @@ class ProfilePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Cabecera superior con degradado de diseño premium
+            // Cabecera superior con degradado de diseño premium monocromo
             Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
@@ -145,17 +145,17 @@ class ProfilePage extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   height: 200,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.shade900,
-                        const Color(0xFF0F172A),
                         Colors.black,
+                        Color(0xFF1F2937),
+                        Color(0xFF374151),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(32),
                       bottomRight: Radius.circular(32),
                     ),
@@ -185,7 +185,7 @@ class ProfilePage extends StatelessWidget {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.verified_user_rounded, color: Colors.greenAccent, size: 14),
+                                Icon(Icons.verified_user_rounded, color: Colors.white, size: 14),
                                 SizedBox(width: 4),
                                 Text(
                                   'Cliente',
@@ -221,7 +221,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                     child: CircleAvatar(
                       radius: 46,
-                      backgroundColor: const Color(0xFF0F172A),
+                      backgroundColor: Colors.black,
                       child: Text(
                         initials,
                         style: const TextStyle(
@@ -241,7 +241,7 @@ class ProfilePage extends StatelessWidget {
             // Nombre y correo principal
             Text(
               auth.nombreCompleto,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
             ),
             const SizedBox(height: 4),
             Text(
@@ -259,32 +259,16 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildInfoCard(
                     icon: Icons.person_outline_rounded,
-                    iconColor: Colors.blue.shade800,
+                    iconColor: Colors.black87,
                     title: 'Nombres Completos',
                     value: auth.nombreCompleto,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoCard(
                     icon: Icons.alternate_email_rounded,
-                    iconColor: Colors.purple.shade700,
+                    iconColor: Colors.black87,
                     title: 'Correo Electrónico',
                     value: auth.email ?? 'N/A',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoCard(
-                    icon: Icons.vpn_key_outlined,
-                    iconColor: Colors.amber.shade800,
-                    title: 'Database ID',
-                    value: auth.uid ?? 'N/A',
-                    isCode: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoCard(
-                    icon: Icons.security_rounded,
-                    iconColor: Colors.teal.shade700,
-                    title: 'Firebase UID',
-                    value: auth.firebaseUid ?? 'N/A',
-                    isCode: true,
                   ),
                   
                   const SizedBox(height: 32),
@@ -309,13 +293,12 @@ class ProfilePage extends StatelessWidget {
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFEE2E2),
-                        foregroundColor: const Color(0xFFDC2626),
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        side: const BorderSide(color: Color(0xFFFCA5A5), width: 1),
                       ),
                     ),
                   ),
