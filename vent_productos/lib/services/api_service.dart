@@ -30,7 +30,7 @@ class ApiService {
   }
 
   Future<List<Purchase>> getPurchases(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/compras'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/compras?admin=true'), headers: headers);
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       List<dynamic> body = decodedBody['data'] ?? [];

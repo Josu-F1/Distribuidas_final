@@ -120,7 +120,15 @@ class Purchase {
 
     return Purchase(
       id: json['id'].toString(),
-      usuarioId: (json['usuario_id'] ?? '').toString(),
+      usuarioId: (json['usuario_id'] ?? 
+                  json['usuarioId'] ?? 
+                  json['user_id'] ?? 
+                  json['userId'] ?? 
+                  json['firebase_uid'] ?? 
+                  json['uid'] ?? 
+                  json['cliente_id'] ?? 
+                  json['clienteId'] ?? 
+                  '').toString(),
       fechaCompra: json['fecha_compra'] ?? '',
       subtotal: double.parse((json['subtotal'] ?? 0).toString()),
       iva: double.parse((json['iva'] ?? 0).toString()),
