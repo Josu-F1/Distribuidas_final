@@ -83,6 +83,16 @@ const Products: React.FC = () => {
       return;
     }
 
+    if (trimmedNombre.length > 30) {
+      toast.error('El nombre del producto no puede tener más de 30 caracteres');
+      return;
+    }
+
+    if (formData.descripcion.trim().length > 50) {
+      toast.error('La descripción no puede tener más de 50 caracteres');
+      return;
+    }
+
     if (formData.precio <= 0) {
       toast.error('El precio del producto debe ser mayor a 0');
       return;
@@ -375,6 +385,7 @@ const Products: React.FC = () => {
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre del producto</label>
                 <input
                   type="text"
+                  maxLength={30}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-medium"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
@@ -385,6 +396,7 @@ const Products: React.FC = () => {
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Descripción</label>
                 <textarea
+                  maxLength={50}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm min-h-20"
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
