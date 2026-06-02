@@ -118,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         Provider.of<AuthProvider>(context, listen: false).setToken(
           realToken,
-          firebaseUid,
+          matchingUser.id,
           email: matchingUser.email,
           nombres: matchingUser.nombres,
           apellidos: matchingUser.apellidos,

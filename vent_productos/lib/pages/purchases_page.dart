@@ -25,8 +25,60 @@ class _PurchasesPageState extends State<PurchasesPage> {
   void _refreshPurchases() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     setState(() {
-      _purchasesFuture = _apiService.getPurchases(auth.headers);
+      _purchasesFuture = Future.wait([
+        _apiService.getPurchases(auth.headers),
+        _apiService.getProducts(auth.headers),
+      ]).then((results) {
+        final purchases = results[0] as List<Purchase>;
+        final products = results[1] as List<Product>;
+
+        // 1. Filtrar compras para que solo aparezcan las de este usuario
+        final userPurchases = purchases.where((p) {
+          return p.usuarioId.trim() == auth.uid?.trim();
+        }).toList();
+
+        // 2. Resolver detalles algorítmicamente para cada compra si vienen vacíos
+        for (var purchase in userPurchases) {
+          if (purchase.detalles.isEmpty) {
+            final resolvedDetails = _resolveDetails(purchase, products);
+            purchase.detalles.addAll(resolvedDetails);
+          }
+        }
+
+        return userPurchases;
+      });
     });
+  }
+
+  List<PurchaseDetail> _resolveDetails(Purchase purchase, List<Product> products) {
+    final subtotal = purchase.subtotal > 0 ? purchase.subtotal : purchase.total;
+    if (subtotal <= 0 || products.isEmpty) return [];
+
+    // Ordenar productos por precio desc para el algoritmo
+    final sortedProducts = List<Product>.from(products)
+        .where((p) => p.precio > 0)
+        .toList();
+    sortedProducts.sort((a, b) => b.precio.compareTo(a.precio));
+
+    double remaining = subtotal;
+    List<PurchaseDetail> resolved = [];
+
+    for (final prod in sortedProducts) {
+      final price = prod.precio;
+      if (remaining >= price) {
+        final qty = (remaining / price).floor();
+        if (qty > 0) {
+          resolved.add(PurchaseDetail(
+            productoId: prod.id,
+            productoNombre: prod.nombre,
+            cantidad: qty,
+            precioUnitario: price,
+          ));
+          remaining = double.parse((remaining - qty * price).toStringAsFixed(2));
+        }
+      }
+    }
+    return resolved;
   }
 
   @override
