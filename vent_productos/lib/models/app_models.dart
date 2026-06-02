@@ -137,7 +137,7 @@ class Purchase {
                   '').toString(),
       usuarioEmail: (json['usuario_email'] ?? '').toString(),
       usuarioNombres: (json['usuario_nombres'] ?? '').toString(),
-      fechaCompra: json['fecha_compra'] ?? '',
+      fechaCompra: (json['fecha_compra'] ?? json['fecha'] ?? json['created_at'] ?? '').toString(),
       subtotal: double.parse((json['subtotal'] ?? 0).toString()),
       iva: double.parse((json['iva'] ?? 0).toString()),
       total: double.parse(json['total'].toString()),

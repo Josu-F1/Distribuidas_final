@@ -273,12 +273,12 @@ class _PurchasesPageState extends State<PurchasesPage> {
               final purchase = purchases[index];
               
               // Formatear Fecha de Compra
-              String formattedDate = 'Fecha N/A';
-              if (purchase.fechaCompra.isNotEmpty) {
-                try {
-                  final date = DateTime.parse(purchase.fechaCompra);
-                  formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(date);
-                } catch (_) {}
+              String formattedDate;
+              final parsedDate = DateTime.tryParse(purchase.fechaCompra);
+              if (parsedDate != null) {
+                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(parsedDate);
+              } else {
+                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
               }
 
               final isPagada = purchase.estado.toUpperCase() == 'PAGADA' ||
