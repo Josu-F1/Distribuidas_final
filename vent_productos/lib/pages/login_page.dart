@@ -34,6 +34,19 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // Validación de formato de correo electrónico
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El formato del correo electrónico no es válido (ej. usuario@empresa.com).'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -56,14 +69,19 @@ class _LoginPageState extends State<LoginPage> {
 
       if (authResponse.statusCode != 200) {
         final errBody = jsonDecode(authResponse.body);
-        final errMsg = errBody['error']?['message'] ?? 'Error desconocido';
-        String friendlyError = 'Error de autenticación';
-        if (errMsg == 'EMAIL_NOT_FOUND' || errMsg == 'INVALID_PASSWORD') {
-          friendlyError = 'Correo o contraseña incorrectos';
-        } else if (errMsg == 'USER_DISABLED') {
-          friendlyError = 'El usuario ha sido deshabilitado';
-        } else if (errMsg == 'TOO_MANY_ATTEMPTS_TRY_LATER') {
-          friendlyError = 'Demasiados intentos fallidos. Intente más tarde.';
+        final errMsg = errBody['error']?['message'] ?? '';
+        String friendlyError = 'Error de autenticación. Intente nuevamente.';
+        
+        if (errMsg.contains('INVALID_EMAIL')) {
+          friendlyError = 'El formato del correo electrónico no es válido.';
+        } else if (errMsg.contains('EMAIL_NOT_FOUND')) {
+          friendlyError = 'El correo electrónico ingresado no está registrado.';
+        } else if (errMsg.contains('INVALID_PASSWORD')) {
+          friendlyError = 'La contraseña ingresada es incorrecta.';
+        } else if (errMsg.contains('USER_DISABLED')) {
+          friendlyError = 'Este usuario se encuentra deshabilitado.';
+        } else if (errMsg.contains('TOO_MANY_ATTEMPTS_TRY_LATER')) {
+          friendlyError = 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente. Intente más tarde.';
         }
         throw Exception(friendlyError);
       }
