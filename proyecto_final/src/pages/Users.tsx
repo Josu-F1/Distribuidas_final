@@ -20,7 +20,12 @@ const Users: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
   // Estados para el modal de edición
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -206,7 +211,7 @@ const Users: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron usuarios</td>
                 </tr>
-              ) : filteredUsers.map((user) => (
+              ) : filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group text-sm text-gray-600">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -259,15 +264,34 @@ const Users: React.FC = () => {
         </div>
 
         <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
-          <div>Mostrando 1-{users.length} de {users.length} clientes</div>
+          <div>
+            Mostrando {filteredUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
+            {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length} clientes
+          </div>
           <div className="flex items-center gap-2">
-            <button className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30" disabled>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
               <ChevronLeft size={16} />
             </button>
-            <div className="flex items-center gap-1">
-              <button className="w-6 h-6 rounded-md bg-black text-white flex items-center justify-center">1</button>
+            <div className="flex items-center gap-1 font-semibold">
+              {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
-            <button className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30" disabled>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredUsers.length / itemsPerPage)))}
+              disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage) || filteredUsers.length === 0}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
               <ChevronRight size={16} />
             </button>
           </div>

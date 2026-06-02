@@ -2,13 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { getProducts, deleteProduct, updateProduct, createProduct } from '../services/api';
 import { Product } from '../types';
 import toast from 'react-hot-toast';
-import { Plus, Package, DollarSign, Layout, Layers, Edit2, Power, Search, Filter, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Package, DollarSign, Layout, Layers, Edit2, Power, Search, Filter, X, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   // Estados para el modal (edición o creación)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,7 +117,9 @@ const Products: React.FC = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const matchesStatus = statusFilter === 'Todos' || 
+                         (statusFilter === 'Activo' ? product.activo : !product.activo);
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -173,20 +182,30 @@ const Products: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4">
+           <div className="flex-1 max-w-sm relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="Buscar productos..." 
+                className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+           </div>
+           <select 
+             className="w-full sm:w-auto px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 outline-none hover:bg-gray-100/50 transition-colors"
+             value={statusFilter}
+             onChange={(e) => setStatusFilter(e.target.value)}
+           >
+             <option value="Todos">Todos los estados</option>
+             <option value="Activo">Activo</option>
+             <option value="Inactivo">Inactivo</option>
+           </select>
+           <div className="ml-auto text-xs text-gray-400 font-medium">{filteredProducts.length} productos</div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -207,7 +226,7 @@ const Products: React.FC = () => {
                 <tr>
                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron productos.</td>
                 </tr>
-              ) : filteredProducts.map(product => (
+              ) : filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                      <div className="flex items-center gap-3">
@@ -289,6 +308,40 @@ const Products: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
+          <div>
+            Mostrando {filteredProducts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
+            {Math.min(currentPage * itemsPerPage, filteredProducts.length)} de {filteredProducts.length} productos
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1 font-semibold">
+              {Array.from({ length: Math.ceil(filteredProducts.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProducts.length / itemsPerPage)))}
+              disabled={currentPage === Math.ceil(filteredProducts.length / itemsPerPage) || filteredProducts.length === 0}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getPurchases, getUsers, getProducts } from '../services/api';
 import { Purchase, User, Product } from '../types';
-import { ShoppingCart, Calendar, CreditCard, CheckCircle, Clock, Archive, RotateCcw, Eye, X } from 'lucide-react';
+import { ShoppingCart, Calendar, CreditCard, CheckCircle, Clock, Archive, RotateCcw, Eye, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Purchases: React.FC = () => {
@@ -11,8 +11,16 @@ const Purchases: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [archivedIds, setArchivedIds] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [purchaseToConfirm, setPurchaseToConfirm] = useState<{ id: string; action: 'archive' | 'restore' } | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   // Estado para modal de detalles
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
@@ -158,10 +166,25 @@ const Purchases: React.FC = () => {
     return resolvedItems;
   };
 
-  // Filtrar según la pestaña activa
-  const activePurchases = purchases.filter(p => !archivedIds.includes(p.id));
-  const archivedPurchases = purchases.filter(p => archivedIds.includes(p.id));
-  const currentPurchases = activeTab === 'active' ? activePurchases : archivedPurchases;
+  // Filtrar según la búsqueda y el estado seleccionado
+  const filteredPurchases = purchases.filter(purchase => {
+    const isArchived = archivedIds.includes(purchase.id);
+    const matchesStatus = statusFilter === 'Todos' ||
+                          (statusFilter === 'Activo' ? !isArchived : isArchived);
+
+    const clientName = getUserName(purchase).toLowerCase();
+    const purchaseId = purchase.id.toLowerCase();
+    const friendlyId = `#inv-${purchase.id.substring(0, 8)}`.toLowerCase();
+    const pStatus = purchase.estado.toLowerCase();
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch = clientName.includes(search) ||
+                          purchaseId.includes(search) ||
+                          friendlyId.includes(search) ||
+                          pStatus.includes(search);
+
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <div>
@@ -207,22 +230,30 @@ const Purchases: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-6 border-b border-gray-100 pb-3">
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 text-sm font-bold transition-all border-b-2 -mb-[14px] ${activeTab === 'active' ? 'border-black text-black' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-        >
-          Historial Activo ({activePurchases.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('archived')}
-          className={`px-4 py-2 text-sm font-bold transition-all border-b-2 -mb-[14px] ${activeTab === 'archived' ? 'border-black text-black' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-        >
-          Historial Archivado ({archivedPurchases.length})
-        </button>
-      </div>
-
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4">
+           <div className="flex-1 max-w-sm relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="Buscar compra..." 
+                className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-black/5" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+           </div>
+           <select 
+             className="w-full sm:w-auto px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 outline-none hover:bg-gray-100/50 transition-colors"
+             value={statusFilter}
+             onChange={(e) => setStatusFilter(e.target.value)}
+           >
+             <option value="Todos">Todos los estados</option>
+             <option value="Activo">Activos (Historial)</option>
+             <option value="Inactivo">Archivados (Inactivos)</option>
+           </select>
+           <div className="ml-auto text-xs text-gray-400 font-medium">{filteredPurchases.length} compras</div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -240,13 +271,13 @@ const Purchases: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Cargando historial de compras...</td>
                 </tr>
-              ) : currentPurchases.length === 0 ? (
+              ) : filteredPurchases.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
                     No hay compras en esta vista.
                   </td>
                 </tr>
-              ) : currentPurchases.map(purchase => (
+              ) : filteredPurchases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(purchase => (
                 <tr key={purchase.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs">
                     <button
@@ -281,21 +312,21 @@ const Purchases: React.FC = () => {
                       >
                         <Eye size={16} />
                       </button>
-                      {activeTab === 'active' ? (
-                        <button
-                          onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'archive' })}
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-gray-50 rounded-lg transition-all"
-                          title="Archivar compra"
-                        >
-                          <Archive size={16} />
-                        </button>
-                      ) : (
+                      {archivedIds.includes(purchase.id) ? (
                         <button
                           onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'restore' })}
                           className="p-1.5 text-gray-300 hover:text-green-500 hover:bg-gray-50 rounded-lg transition-all"
                           title="Restaurar compra"
                         >
                           <RotateCcw size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'archive' })}
+                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-gray-50 rounded-lg transition-all"
+                          title="Archivar compra"
+                        >
+                          <Archive size={16} />
                         </button>
                       )}
                     </div>
@@ -304,6 +335,40 @@ const Purchases: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="p-4 border-t border-gray-50 flex items-center justify-between text-xs font-medium text-gray-400">
+          <div>
+            Mostrando {filteredPurchases.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
+            {Math.min(currentPage * itemsPerPage, filteredPurchases.length)} de {filteredPurchases.length} compras
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1 font-semibold">
+              {Array.from({ length: Math.ceil(filteredPurchases.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredPurchases.length / itemsPerPage)))}
+              disabled={currentPage === Math.ceil(filteredPurchases.length / itemsPerPage) || filteredPurchases.length === 0}
+              className="p-1 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
