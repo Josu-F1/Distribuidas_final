@@ -34,4 +34,4 @@ export const createProduct = (data: Partial<Product>) => api.post<ApiResponse<Pr
 export const deleteProduct = (id: string) => api.delete<ApiResponse<any>>(`/api/productos/${id}`).then(res => res.data);
 export const updateProduct = (id: string, data: Partial<Product>) => api.put<ApiResponse<Product>>(`/api/productos/${id}`, data).then(res => res.data.data);
 
-export const getPurchases = () => api.get<ApiResponse<Purchase[]>>('/api/compras').then(res => res.data.data);
+export const getPurchases = () => api.get<ApiResponse<Purchase[]>>('/api/compras?admin=true').then(res => res.data.data);

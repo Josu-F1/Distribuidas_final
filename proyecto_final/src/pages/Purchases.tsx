@@ -40,7 +40,7 @@ const Purchases: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            ${purchases.reduce((acc, p) => acc + (p.total || 0), 0).toLocaleString()}
+            ${purchases.reduce((acc, p) => acc + (Number(p.total) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="text-xs text-gray-400 mt-1">En ventas brutas</div>
         </div>
