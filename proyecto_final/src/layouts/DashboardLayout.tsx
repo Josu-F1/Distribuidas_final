@@ -1,6 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../services/firebase';
+import { getUsers } from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   Users as UsersIcon, 
   ShoppingBag, 
@@ -15,16 +19,47 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
+  const [checkingRole, setCheckingRole] = useState(true);
+
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
+    const verifyRole = async () => {
+      if (loading) return;
+
+      if (!user) {
+        navigate('/login');
+        setCheckingRole(false);
+        return;
+      }
+
+      try {
+        const allUsers = await getUsers();
+        const dbUser = allUsers.find(u => 
+          u.firebase_uid === user.uid || 
+          u.email.toLowerCase() === user.email?.toLowerCase()
+        );
+
+        if (dbUser && dbUser.rol === 'ADMIN') {
+          setCheckingRole(false);
+        } else {
+          toast.error('Acceso denegado. Esta plataforma es exclusiva para administradores.');
+          await signOut(auth);
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Error al verificar rol de administrador:', err);
+        toast.error('Sesión no autorizada o error de red.');
+        await signOut(auth);
+        navigate('/login');
+      }
+    };
+
+    verifyRole();
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || checkingRole) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500 font-medium italic animate-pulse">Cargando sesión...</div>
+        <div className="text-gray-500 font-medium italic animate-pulse">Verificando credenciales...</div>
       </div>
     );
   }

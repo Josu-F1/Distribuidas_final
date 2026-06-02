@@ -225,7 +225,7 @@ const Users: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
-                <th className="px-6 py-4">Usuario</th>
+                <th className="px-6 py-4 w-full">Usuario</th>
                 <th className="px-6 py-4">Correo</th>
                 <th className="px-6 py-4">Teléfono</th>
                 <th className="px-6 py-4">Estado</th>
@@ -274,7 +274,7 @@ const Users: React.FC = () => {
                     {new Date(user.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2.5">
+                    <div className="inline-flex items-center gap-1.5">
                        <button
                          className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                          onClick={() => handleEditClick(user)}

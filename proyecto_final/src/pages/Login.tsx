@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout, Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '../services/firebase';
+import { getUsers } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Login: React.FC = () => {
@@ -29,7 +30,22 @@ const Login: React.FC = () => {
 
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Obtener usuarios para verificar el rol administrador
+      const allUsers = await getUsers();
+      const dbUser = allUsers.find(u => 
+        u.firebase_uid === firebaseUser.uid || 
+        u.email.toLowerCase() === firebaseUser.email?.toLowerCase()
+      );
+
+      if (!dbUser || dbUser.rol !== 'ADMIN') {
+        await signOut(auth);
+        toast.error('Acceso denegado. Solo administradores pueden ingresar.');
+        return;
+      }
+
       toast.success('¡Iniciado sesión correctamente!');
       navigate('/dashboard');
     } catch (err: any) {

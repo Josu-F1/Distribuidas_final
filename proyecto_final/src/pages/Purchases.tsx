@@ -247,7 +247,7 @@ const Purchases: React.FC = () => {
             <thead>
               <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
                 <th className="px-6 py-4">ID Compra</th>
-                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4 w-full">Cliente</th>
                 <th className="px-6 py-4">Fecha</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4">Estado</th>
@@ -299,7 +299,7 @@ const Purchases: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2.5">
+                    <div className="inline-flex items-center gap-1.5">
                       <button
                         onClick={() => setSelectedPurchase(purchase)}
                         className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
