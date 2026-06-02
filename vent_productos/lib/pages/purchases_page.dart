@@ -34,7 +34,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
         // 1. Filtrar compras para que solo aparezcan las de este usuario
         final userPurchases = purchases.where((p) {
-          return p.usuarioId.trim() == auth.uid?.trim();
+          final pId = p.usuarioId.trim().toLowerCase();
+          return pId == auth.databaseId?.trim().toLowerCase() ||
+                 pId == auth.firebaseUid?.trim().toLowerCase();
         }).toList();
 
         // 2. Resolver detalles algorítmicamente para cada compra si vienen vacíos

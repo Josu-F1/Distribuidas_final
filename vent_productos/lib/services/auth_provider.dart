@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _token;
-  String? _userUid;
+  String? _databaseId;
+  String? _firebaseUid;
   String? _email;
   String? _nombres;
   String? _apellidos;
 
   String? get token => _token;
-  String? get uid => _userUid;
+  String? get uid => _databaseId; // Para compatibilidad
+  String? get databaseId => _databaseId;
+  String? get firebaseUid => _firebaseUid;
   String? get email => _email;
   String? get nombres => _nombres;
   String? get apellidos => _apellidos;
@@ -17,9 +20,10 @@ class AuthProvider with ChangeNotifier {
       : 'Cliente Móvil';
   bool get isAuthenticated => _token != null;
 
-  void setToken(String token, String uid, {String? email, String? nombres, String? apellidos}) {
+  void setToken(String token, String databaseId, String firebaseUid, {String? email, String? nombres, String? apellidos}) {
     _token = token;
-    _userUid = uid;
+    _databaseId = databaseId;
+    _firebaseUid = firebaseUid;
     _email = email;
     _nombres = nombres;
     _apellidos = apellidos;
@@ -28,7 +32,8 @@ class AuthProvider with ChangeNotifier {
 
   void logout() {
     _token = null;
-    _userUid = null;
+    _databaseId = null;
+    _firebaseUid = null;
     _email = null;
     _nombres = null;
     _apellidos = null;
