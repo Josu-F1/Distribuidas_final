@@ -76,12 +76,42 @@ const Products: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedNombre = formData.nombre.trim();
+    if (!trimmedNombre) {
+      toast.error('El nombre del producto es requerido');
+      return;
+    }
+
+    if (formData.precio <= 0) {
+      toast.error('El precio del producto debe ser mayor a 0');
+      return;
+    }
+
+    if (formData.stock < 0) {
+      toast.error('El stock no puede ser negativo');
+      return;
+    }
+
+    if (!Number.isInteger(Number(formData.stock))) {
+      toast.error('El stock debe ser un número entero');
+      return;
+    }
+
     try {
+      const payload = {
+        ...formData,
+        nombre: trimmedNombre,
+        descripcion: formData.descripcion.trim(),
+        precio: Number(formData.precio),
+        stock: Number(formData.stock)
+      };
+
       if (editingProduct) {
-        await updateProduct(editingProduct.id, formData);
+        await updateProduct(editingProduct.id, payload);
         toast.success('Producto actualizado');
       } else {
-        await createProduct(formData);
+        await createProduct(payload);
         toast.success('Producto creado');
       }
       setIsModalOpen(false);
@@ -388,8 +418,9 @@ const Products: React.FC = () => {
                   <input
                     type="number"
                     step="0.01"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold"
-                    value={formData.precio}
+                    min="0.01"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
+                    value={formData.precio || ''}
                     onChange={(e) => {
                       const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
                       setFormData({ ...formData, precio: isNaN(val) ? 0 : val });
@@ -401,10 +432,12 @@ const Products: React.FC = () => {
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Stock disponible</label>
                   <input
                     type="number"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold"
-                    value={formData.stock}
+                    step="1"
+                    min="0"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
+                    value={formData.stock === 0 ? '0' : formData.stock || ''}
                     onChange={(e) => {
-                      const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                      const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
                       setFormData({ ...formData, stock: isNaN(val) ? 0 : val });
                     }}
                     required

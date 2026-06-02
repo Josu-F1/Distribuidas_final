@@ -77,8 +77,32 @@ const Users: React.FC = () => {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
+
+    const trimmedNombres = editFormData.nombres.trim();
+    const trimmedApellidos = editFormData.apellidos.trim();
+
+    if (!trimmedNombres || !trimmedApellidos) {
+      toast.error('Nombres y apellidos son requeridos');
+      return;
+    }
+
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!nameRegex.test(trimmedNombres)) {
+      toast.error('Los nombres solo deben contener letras');
+      return;
+    }
+
+    if (!nameRegex.test(trimmedApellidos)) {
+      toast.error('Los apellidos solo deben contener letras');
+      return;
+    }
+
     try {
-      await updateUser(editingUser.id, editFormData);
+      await updateUser(editingUser.id, {
+        ...editFormData,
+        nombres: trimmedNombres,
+        apellidos: trimmedApellidos
+      });
       toast.success('Usuario actualizado');
       setEditingUser(null);
       fetchUsers();

@@ -9,17 +9,34 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validaciones
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     try {
+      setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('¡Iniciado sesión correctamente!');
       navigate('/dashboard');
     } catch (err: any) {
       toast.error('Error al iniciar sesión. Verifica tus credenciales.');
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,9 +112,10 @@ const Login: React.FC = () => {
                 <input
                   type="email"
                   placeholder="admin@empresa.com"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 disabled:opacity-50 disabled:bg-gray-50"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -111,15 +129,17 @@ const Login: React.FC = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••••••"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 disabled:opacity-50 disabled:bg-gray-50"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black disabled:opacity-30"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -128,9 +148,17 @@ const Login: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#111] text-white py-3 rounded-lg font-bold hover:bg-black transition-colors"
+              disabled={loading}
+              className="w-full bg-[#111] text-white py-3 rounded-lg font-bold hover:bg-black transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Iniciar sesión
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar sesión'
+              )}
             </button>
           </form>
         </div>
