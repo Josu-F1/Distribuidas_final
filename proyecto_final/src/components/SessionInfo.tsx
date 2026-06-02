@@ -52,9 +52,39 @@ const SessionInfo: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombres.trim() || !apellidos.trim()) {
+    const trimmedNombres = nombres.trim();
+    const trimmedApellidos = apellidos.trim();
+
+    if (!trimmedNombres || !trimmedApellidos) {
       toast.error('Nombres y apellidos son requeridos');
       return;
+    }
+
+    if (trimmedNombres.length > 30) {
+      toast.error('El nombre no puede tener más de 30 caracteres');
+      return;
+    }
+
+    if (trimmedApellidos.length > 30) {
+      toast.error('El apellido no puede tener más de 30 caracteres');
+      return;
+    }
+
+    const phone = telefono ? telefono.trim() : '';
+    if (phone) {
+      if (!phone.startsWith('09')) {
+        toast.error('El teléfono debe comenzar con 09');
+        return;
+      }
+      if (phone.length !== 10) {
+        toast.error('El teléfono debe tener exactamente 10 dígitos');
+        return;
+      }
+      const numberRegex = /^[0-9]+$/;
+      if (!numberRegex.test(phone)) {
+        toast.error('El teléfono solo debe contener números');
+        return;
+      }
     }
 
     try {
@@ -73,7 +103,7 @@ const SessionInfo: React.FC = () => {
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
           rol: dbUser.rol,
-          telefono: telefono.trim(),
+          telefono: phone || null,
           estado: dbUser.estado
         });
         setDbUser(updated);
@@ -86,9 +116,10 @@ const SessionInfo: React.FC = () => {
       if (auth.currentUser) {
         await auth.currentUser.reload();
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al guardar cambios');
+    } catch (err: any) {
+      console.error("Error al guardar perfil:", err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
+      toast.error(`Error al guardar cambios: ${errMsg}`);
     } finally {
       setSaving(false);
     }
@@ -144,7 +175,7 @@ const SessionInfo: React.FC = () => {
         </div>
 
         {/* Sección de Datos Formulario/Detalle */}
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} noValidate className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Columna Izquierda: Información de Registro / Estado */}
             <div className="md:col-span-1 space-y-4 bg-gray-50/50 p-5 rounded-2xl border border-gray-50">
@@ -203,9 +234,10 @@ const SessionInfo: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
+                      maxLength={30}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 text-sm font-semibold text-gray-900"
                       value={nombres}
-                      onChange={(e) => setNombres(e.target.value)}
+                      onChange={(e) => setNombres(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
                       required
                     />
                   ) : (
@@ -220,9 +252,10 @@ const SessionInfo: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
+                      maxLength={30}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 text-sm font-semibold text-gray-900"
                       value={apellidos}
-                      onChange={(e) => setApellidos(e.target.value)}
+                      onChange={(e) => setApellidos(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
                       required
                     />
                   ) : (
@@ -239,10 +272,11 @@ const SessionInfo: React.FC = () => {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                       <input
                         type="text"
+                        maxLength={10}
                         className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 text-sm font-medium text-gray-900"
-                        placeholder="Ej. +593 999999999"
+                        placeholder="Ej. 0999999999"
                         value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
+                        onChange={(e) => setTelefono(e.target.value.replace(/[^0-9]/g, ''))}
                       />
                     </div>
                   ) : (

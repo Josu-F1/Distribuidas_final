@@ -16,10 +16,20 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validaciones
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      toast.error('El correo electrónico es requerido.');
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(trimmedEmail)) {
       toast.error('Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
+
+    if (!password) {
+      toast.error('La contraseña es requerida.');
       return;
     }
 
@@ -121,7 +131,7 @@ const Login: React.FC = () => {
           <h2 className="text-2xl font-bold mb-2">Iniciar sesión</h2>
           <p className="text-gray-400 mb-8">Accede a tu panel de administración</p>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} noValidate className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
               <div className="relative">

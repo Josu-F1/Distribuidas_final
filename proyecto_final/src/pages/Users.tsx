@@ -86,6 +86,16 @@ const Users: React.FC = () => {
       return;
     }
 
+    if (trimmedNombres.length > 30) {
+      toast.error('El nombre no puede tener más de 30 caracteres');
+      return;
+    }
+
+    if (trimmedApellidos.length > 30) {
+      toast.error('El apellido no puede tener más de 30 caracteres');
+      return;
+    }
+
     const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!nameRegex.test(trimmedNombres)) {
       toast.error('Los nombres solo deben contener letras');
@@ -97,17 +107,38 @@ const Users: React.FC = () => {
       return;
     }
 
+    const phone = editFormData.telefono ? editFormData.telefono.trim() : '';
+    if (phone) {
+      if (!phone.startsWith('09')) {
+        toast.error('El teléfono debe comenzar con 09');
+        return;
+      }
+      if (phone.length !== 10) {
+        toast.error('El teléfono debe tener exactamente 10 dígitos');
+        return;
+      }
+      const numberRegex = /^[0-9]+$/;
+      if (!numberRegex.test(phone)) {
+        toast.error('El teléfono solo debe contener números');
+        return;
+      }
+    }
+
     try {
       await updateUser(editingUser.id, {
         nombres: trimmedNombres,
         apellidos: trimmedApellidos,
-        telefono: editFormData.telefono
+        rol: editFormData.rol,
+        telefono: phone || '',
+        estado: editFormData.estado
       });
       toast.success('Usuario actualizado');
       setEditingUser(null);
       fetchUsers();
-    } catch (err) {
-      toast.error('Error al actualizar usuario');
+    } catch (err: any) {
+      console.error("Error al actualizar usuario:", err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
+      toast.error(`Error al actualizar usuario: ${errMsg}`);
     }
   };
 
@@ -343,15 +374,16 @@ const Users: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleUpdate} className="p-6 space-y-4">
+            <form onSubmit={handleUpdate} noValidate className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nombres</label>
                   <input
                     type="text"
+                    maxLength={30}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                     value={editFormData.nombres}
-                    onChange={(e) => setEditFormData({ ...editFormData, nombres: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, nombres: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') })}
                     required
                   />
                 </div>
@@ -359,9 +391,10 @@ const Users: React.FC = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Apellidos</label>
                   <input
                     type="text"
+                    maxLength={30}
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                     value={editFormData.apellidos}
-                    onChange={(e) => setEditFormData({ ...editFormData, apellidos: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, apellidos: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '') })}
                     required
                   />
                 </div>
@@ -370,10 +403,11 @@ const Users: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Teléfono</label>
                 <input
                   type="tel"
+                  maxLength={10}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                   value={editFormData.telefono || ''}
-                  onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
-                  placeholder="Ej: 0414-1234567"
+                  onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value.replace(/[^0-9]/g, '') })}
+                  placeholder="Ej: 0999999999"
                 />
               </div>
               <div className="flex gap-3 pt-4">
