@@ -14,7 +14,7 @@ class ApiService {
       List<dynamic> body = decodedBody['data'] ?? [];
       return body.map((dynamic item) => User.fromJson(item)).toList();
     } else {
-      throw Exception('Fallo al cargar usuarios');
+      throw Exception('Fallo al cargar usuarios. Código: ${response.statusCode}, Body: ${response.body}');
     }
   }
 
@@ -65,7 +65,7 @@ class ApiService {
     }
   }
 
-  Future<void> generateInvoice(String compraId, String userEmail, List<CartItem> items) async {
+  Future<void> generateInvoice(String compraId, String userEmail, String clientName, List<CartItem> items) async {
     // URL de la API de facturación pública en Render
     const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
     
@@ -73,7 +73,7 @@ class ApiService {
       'numero': 'F001-${compraId.substring(0, 8).toUpperCase()}',
       'fecha': DateTime.now().toIso8601String().split('T')[0],
       'cliente': {
-        'nombre': 'Cliente Móvil',
+        'nombre': clientName,
         'cedula_ruc': '1899999999', // Podría ser dinámico si tuviéramos perfil
         'correo': userEmail,
         'direccion': 'Ecuador'

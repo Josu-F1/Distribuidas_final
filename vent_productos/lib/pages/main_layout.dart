@@ -139,7 +139,7 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              auth.token == "test-token" ? "Usuario de Prueba" : "Usuario Conectado",
+              auth.nombreCompleto,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Text(auth.email ?? 'test@test.com', style: const TextStyle(color: Colors.grey)),
@@ -147,7 +147,7 @@ class ProfilePage extends StatelessWidget {
             _buildInfoCard(
               icon: Icons.person_outline,
               title: 'Mis Datos',
-              subtitle: 'Nombre: Usuario Móvil\nID: ${auth.uid ?? "N/A"}',
+              subtitle: 'Nombre: ${auth.nombreCompleto}\nID: ${auth.uid ?? "N/A"}',
             ),
             const SizedBox(height: 12),
             _buildInfoCard(
@@ -320,6 +320,7 @@ class CartModal extends StatelessWidget {
           await apiService.generateInvoice(
             compraId, 
             auth.email ?? "test@test.com", 
+            auth.nombreCompleto,
             cart.items
           );
 

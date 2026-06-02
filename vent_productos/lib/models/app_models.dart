@@ -43,6 +43,7 @@ class Product {
   final int stock;
   final String categoria;
   final bool activo;
+  final String imagenUrl;
 
   Product({
     required this.id,
@@ -52,6 +53,7 @@ class Product {
     required this.stock,
     required this.categoria,
     required this.activo,
+    required this.imagenUrl,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,30 @@ class Product {
       stock: json['stock'],
       categoria: json['categoria'] ?? 'General',
       activo: json['activo'] == true,
+      imagenUrl: json['imagen_url'] ?? json['imagen'] ?? json['image_url'] ?? '',
+    );
+  }
+}
+
+class PurchaseDetail {
+  final String productoId;
+  final String productoNombre;
+  final int cantidad;
+  final double precioUnitario;
+
+  PurchaseDetail({
+    required this.productoId,
+    required this.productoNombre,
+    required this.cantidad,
+    required this.precioUnitario,
+  });
+
+  factory PurchaseDetail.fromJson(Map<String, dynamic> json) {
+    return PurchaseDetail(
+      productoId: (json['producto_id'] ?? '').toString(),
+      productoNombre: json['producto']?['nombre'] ?? json['producto_nombre'] ?? '',
+      cantidad: json['cantidad'] ?? 0,
+      precioUnitario: double.parse((json['precio_unitario'] ?? 0).toString()),
     );
   }
 }
@@ -75,6 +101,7 @@ class Purchase {
   final double iva;
   final double total;
   final String estado;
+  final List<PurchaseDetail> detalles;
 
   Purchase({
     required this.id,
@@ -84,9 +111,13 @@ class Purchase {
     required this.iva,
     required this.total,
     required this.estado,
+    required this.detalles,
   });
 
   factory Purchase.fromJson(Map<String, dynamic> json) {
+    var list = json['detalles'] as List? ?? json['details'] as List? ?? [];
+    List<PurchaseDetail> detailsList = list.map((i) => PurchaseDetail.fromJson(i)).toList();
+
     return Purchase(
       id: json['id'].toString(),
       usuarioId: (json['usuario_id'] ?? '').toString(),
@@ -95,6 +126,7 @@ class Purchase {
       iva: double.parse((json['iva'] ?? 0).toString()),
       total: double.parse(json['total'].toString()),
       estado: json['estado'],
+      detalles: detailsList,
     );
   }
 }
