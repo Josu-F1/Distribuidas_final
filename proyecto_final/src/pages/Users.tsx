@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { getUsers, deleteUser, updateUser } from '../services/api';
 import { User } from '../types';
 import toast from 'react-hot-toast';
-import { 
-  Plus, 
-  Users as UsersIcon, 
-  UserCheck, 
-  UserX, 
-  Shield, 
+import {
+  Plus,
+  Users as UsersIcon,
+  UserCheck,
+  UserX,
+  Shield,
   MoreHorizontal,
   Edit2,
   ChevronLeft,
@@ -99,9 +99,9 @@ const Users: React.FC = () => {
 
     try {
       await updateUser(editingUser.id, {
-        ...editFormData,
         nombres: trimmedNombres,
-        apellidos: trimmedApellidos
+        apellidos: trimmedApellidos,
+        telefono: editFormData.telefono
       });
       toast.success('Usuario actualizado');
       setEditingUser(null);
@@ -112,10 +112,10 @@ const Users: React.FC = () => {
   };
 
   const confirmDelete = (user: User) => {
-    setUserToDelete({ 
-      id: user.id, 
-      name: `${user.nombres} ${user.apellidos}`, 
-      estado: user.estado 
+    setUserToDelete({
+      id: user.id,
+      name: `${user.nombres} ${user.apellidos}`,
+      estado: user.estado
     });
     setIsDeleteModalOpen(true);
   };
@@ -123,7 +123,7 @@ const Users: React.FC = () => {
   const handleDelete = async () => {
     if (!userToDelete) return;
     try {
-      // Usamos updateUser para cambiar el estado si queremos reactivar, 
+      // Usamos updateUser para cambiar el estado si queremos reactivar,
       // o deleteUser si queremos desactivar (que ya hace update a false)
       if (userToDelete.estado) {
         await deleteUser(userToDelete.id);
@@ -154,11 +154,11 @@ const Users: React.FC = () => {
     const fullName = `${user.nombres} ${user.apellidos}`.toLowerCase();
     const email = user.email.toLowerCase();
     const search = searchTerm.toLowerCase();
-    
+
     const matchesSearch = fullName.includes(search) || email.includes(search);
-    const matchesStatus = statusFilter === 'Todos' || 
+    const matchesStatus = statusFilter === 'Todos' ||
                          (statusFilter === 'Activo' ? user.estado : !user.estado);
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -179,8 +179,8 @@ const Users: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, i) => (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className="group bg-gradient-to-b from-white to-gray-50/30 p-6 rounded-2xl border border-gray-150 shadow-sm hover:shadow-md hover:border-gray-250 transition-all duration-300 hover:-translate-y-0.5 cursor-default"
           >
             <div className="flex justify-between items-center mb-4">
@@ -201,15 +201,15 @@ const Users: React.FC = () => {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
         <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4 bg-gray-50/20">
            <div className="flex-1 max-w-sm relative w-full">
-              <input 
-                type="text" 
-                placeholder="Buscar usuario por nombre o correo..." 
-                className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors" 
+              <input
+                type="text"
+                placeholder="Buscar usuario por nombre o correo..."
+                className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
-           <select 
+           <select
              className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
@@ -227,6 +227,7 @@ const Users: React.FC = () => {
               <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
                 <th className="px-6 py-4">Usuario</th>
                 <th className="px-6 py-4">Correo</th>
+                <th className="px-6 py-4">Teléfono</th>
                 <th className="px-6 py-4">Estado</th>
                 <th className="px-6 py-4">Registro</th>
                 <th className="px-6 py-4 text-right">Acciones</th>
@@ -255,12 +256,13 @@ const Users: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-medium">{user.email}</td>
+                  <td className="px-6 py-4 font-medium">{user.telefono || '-'}</td>
                   <td className="px-6 py-4">
-                    <button 
+                    <button
                       onClick={() => toggleStatus(user)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all ${
-                        user.estado 
-                          ? 'bg-black text-white border-black/10 hover:bg-black/90' 
+                        user.estado
+                          ? 'bg-black text-white border-black/10 hover:bg-black/90'
                           : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
                       }`}
                     >
@@ -273,13 +275,13 @@ const Users: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2.5">
-                       <button 
+                       <button
                          className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
                          onClick={() => handleEditClick(user)}
                        >
                          <Edit2 size={15} />
                        </button>
-                       <button 
+                       <button
                          className={`p-2 text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all ${
                            user.estado ? 'hover:text-red-500' : 'hover:text-green-500'
                          }`}
@@ -302,7 +304,7 @@ const Users: React.FC = () => {
             {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length} clientes
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
@@ -311,7 +313,7 @@ const Users: React.FC = () => {
             </button>
             <div className="flex items-center gap-1 font-semibold">
               {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
-                <button 
+                <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${currentPage === page ? 'bg-black text-white shadow-sm' : 'text-gray-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150'}`}
@@ -320,7 +322,7 @@ const Users: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button 
+            <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredUsers.length / itemsPerPage)))}
               disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage) || filteredUsers.length === 0}
               className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all shadow-sm"
@@ -364,6 +366,16 @@ const Users: React.FC = () => {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Teléfono</label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
+                  value={editFormData.telefono || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
+                  placeholder="Ej: 0414-1234567"
+                />
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -397,7 +409,7 @@ const Users: React.FC = () => {
               {userToDelete?.estado ? '¿Desactivar usuario?' : '¿Activar usuario?'}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              Estás a punto de {userToDelete?.estado ? 'desactivar' : 'activar'} a <span className="font-bold text-gray-900">{userToDelete?.name}</span>. 
+              Estás a punto de {userToDelete?.estado ? 'desactivar' : 'activar'} a <span className="font-bold text-gray-900">{userToDelete?.name}</span>.
               {userToDelete?.estado ? ' El usuario ya no podrá acceder al sistema.' : ' El usuario recuperará su acceso al sistema.'}
             </p>
             <div className="flex gap-3">
