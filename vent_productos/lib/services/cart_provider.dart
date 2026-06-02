@@ -12,12 +12,33 @@ class CartProvider with ChangeNotifier {
 
   void addToCart(Product product) {
     final index = _items.indexWhere((item) => item.product.id == product.id);
-    if (index >= 0) {
-      _items[index].quantity++;
-    } else {
+    if (index < 0) {
       _items.add(CartItem(product: product, quantity: 1));
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  void incrementQuantity(String productId) {
+    final index = _items.indexWhere((item) => item.product.id == productId);
+    if (index >= 0) {
+      if (_items[index].quantity < _items[index].product.stock) {
+        _items[index].quantity++;
+        notifyListeners();
+      }
+    }
+  }
+
+  void decrementQuantity(String productId) {
+    final index = _items.indexWhere((item) => item.product.id == productId);
+    if (index >= 0) {
+      if (_items[index].quantity > 1) {
+        _items[index].quantity--;
+        notifyListeners();
+      } else {
+        _items.removeAt(index);
+        notifyListeners();
+      }
+    }
   }
 
   void removeFromCart(String productId) {

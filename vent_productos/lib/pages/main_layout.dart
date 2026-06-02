@@ -244,12 +244,82 @@ class CartModal extends StatelessWidget {
                     itemCount: cart.items.length,
                     itemBuilder: (context, index) {
                       final item = cart.items[index];
-                      return ListTile(
-                        title: Text(item.product.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${item.quantity} x \$${item.product.precio.toStringAsFixed(2)}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () => cart.removeFromCart(item.product.id),
+                      final maxStock = item.product.stock;
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFF3F4F6)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.product.nombre,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '\$${item.product.precio.toStringAsFixed(2)} c/u',
+                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Selector de cantidad
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.black54, size: 22),
+                                  onPressed: () => cart.decrementQuantity(item.product.id),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                  child: Text(
+                                    '${item.quantity}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.add_circle_outline,
+                                    color: item.quantity >= maxStock ? Colors.grey : Colors.black54,
+                                    size: 22,
+                                  ),
+                                  onPressed: item.quantity >= maxStock
+                                      ? null
+                                      : () => cart.incrementQuantity(item.product.id),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            // Precio Total Item
+                            Text(
+                              '\$${(item.product.precio * item.quantity).toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                            ),
+                            const SizedBox(width: 12),
+                            // Eliminar del carrito
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                              onPressed: () => cart.removeFromCart(item.product.id),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ),
                       );
                     },

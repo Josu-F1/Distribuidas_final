@@ -68,7 +68,23 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void _handleAddToCart(Product product) {
-    Provider.of<CartProvider>(context, listen: false).addToCart(product);
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final alreadyInCart = cart.items.any((item) => item.product.id == product.id);
+
+    if (alreadyInCart) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.nombre} ya está en el carrito'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: Colors.black,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
+
+    cart.addToCart(product);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${product.nombre} añadido al carrito'),
@@ -348,17 +364,27 @@ class _ProductsPageState extends State<ProductsPage> {
                             ),
                             const SizedBox(width: 12),
 
-                            // Botón de Agregar
-                            IconButton.filled(
-                              onPressed: product.stock > 0 ? () => _handleAddToCart(product) : null,
-                              icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                fixedSize: const Size(42, 42),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
+                             // Botón de Agregar
+                             Consumer<CartProvider>(
+                               builder: (context, cart, child) {
+                                 final alreadyInCart = cart.items.any((item) => item.product.id == product.id);
+                                 return IconButton.filled(
+                                   onPressed: product.stock > 0 ? () => _handleAddToCart(product) : null,
+                                   icon: Icon(
+                                     alreadyInCart
+                                         ? Icons.check_circle_outline_rounded
+                                         : Icons.add_shopping_cart_rounded,
+                                     size: 20,
+                                   ),
+                                   style: IconButton.styleFrom(
+                                     backgroundColor: alreadyInCart ? Colors.green : Colors.black,
+                                     foregroundColor: Colors.white,
+                                     fixedSize: const Size(42, 42),
+                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                   ),
+                                 );
+                               },
+                             ),
                           ],
                         ),
                       );
