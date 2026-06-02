@@ -246,12 +246,12 @@ const Purchases: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
-                <th className="px-6 py-4">ID Compra</th>
-                <th className="px-6 py-4 w-full">Cliente</th>
-                <th className="px-6 py-4">Fecha</th>
-                <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
+                <th className="px-6 py-4 w-[15%]">ID Compra</th>
+                <th className="px-6 py-4 w-[30%]">Cliente</th>
+                <th className="px-6 py-4 w-[18%]">Fecha</th>
+                <th className="px-6 py-4 w-[12%]">Total</th>
+                <th className="px-6 py-4 w-[13%]">Estado</th>
+                <th className="px-6 py-4 w-[12%] text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 text-sm text-gray-600">

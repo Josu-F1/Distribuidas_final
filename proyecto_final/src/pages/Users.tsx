@@ -225,12 +225,12 @@ const Users: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 text-gray-450 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100">
-                <th className="px-6 py-4 w-full">Usuario</th>
-                <th className="px-6 py-4">Correo</th>
-                <th className="px-6 py-4">Teléfono</th>
-                <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4">Registro</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
+                <th className="px-6 py-4 w-[20%]">Usuario</th>
+                <th className="px-6 py-4 w-[25%]">Correo</th>
+                <th className="px-6 py-4 w-[18%]">Teléfono</th>
+                <th className="px-6 py-4 w-[12%]">Estado</th>
+                <th className="px-6 py-4 w-[13%]">Registro</th>
+                <th className="px-6 py-4 w-[12%] text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
