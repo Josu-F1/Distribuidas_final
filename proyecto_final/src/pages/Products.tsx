@@ -375,7 +375,7 @@ const Products: React.FC = () => {
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre del producto</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-medium"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-medium"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   required
@@ -385,7 +385,7 @@ const Products: React.FC = () => {
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Descripción</label>
                 <textarea
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm min-h-20"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm min-h-20"
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 />
@@ -398,7 +398,7 @@ const Products: React.FC = () => {
                     type="number"
                     step="0.01"
                     min="0.01"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
                     value={formData.precio || ''}
                     onChange={(e) => {
                       const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
@@ -413,7 +413,7 @@ const Products: React.FC = () => {
                     type="number"
                     step="1"
                     min="0"
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm font-bold animate-transition"
                     value={formData.stock === 0 ? '0' : formData.stock || ''}
                     onChange={(e) => {
                       const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
@@ -430,12 +430,24 @@ const Products: React.FC = () => {
                   <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input
                     type="text"
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-101 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-sm"
                     value={formData.imagen_url}
                     placeholder="https://..."
                     onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
                   />
                 </div>
+                {formData.imagen_url && (
+                  <div className="mt-3 flex justify-center border border-gray-150 rounded-xl p-2 bg-gray-50/50">
+                    <img 
+                      src={formData.imagen_url} 
+                      alt="Vista previa del producto" 
+                      className="max-h-32 object-contain rounded-lg shadow-sm"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
