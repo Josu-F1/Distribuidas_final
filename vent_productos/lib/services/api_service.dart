@@ -30,13 +30,13 @@ class ApiService {
   }
 
   Future<List<Purchase>> getPurchases(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/compras?admin=true'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/compras'), headers: headers);
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       List<dynamic> body = decodedBody['data'] ?? [];
       return body.map((dynamic item) => Purchase.fromJson(item)).toList();
     } else {
-      throw Exception('Fallo al cargar compras');
+      throw Exception('Fallo al cargar compras. Código: ${response.statusCode}, Body: ${response.body}');
     }
   }
 
