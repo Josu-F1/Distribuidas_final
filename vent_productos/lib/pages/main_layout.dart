@@ -116,65 +116,211 @@ class _MainLayoutState extends State<MainLayout> {
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  String _getInitials(String? nombres, String? apellidos) {
+    String initials = '';
+    if (nombres != null && nombres.trim().isNotEmpty) {
+      initials += nombres.trim()[0].toUpperCase();
+    }
+    if (apellidos != null && apellidos.trim().isNotEmpty) {
+      initials += apellidos.trim()[0].toUpperCase();
+    }
+    return initials.isNotEmpty ? initials : 'U';
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    
+    final initials = _getInitials(auth.nombres, auth.apellidos);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Mi Perfil', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.black,
-              child: Icon(Icons.person, size: 50, color: Colors.white),
+            // Cabecera superior con degradado de diseño premium
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blue.shade900,
+                        const Color(0xFF0F172A),
+                        Colors.black,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Mi Perfil',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_user_rounded, color: Colors.greenAccent, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Cliente',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Avatar flotante
+                Positioned(
+                  bottom: -50,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 16,
+                          offset: Offset(0, 8),
+                        )
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 46,
+                      backgroundColor: const Color(0xFF0F172A),
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 64),
+            
+            // Nombre y correo principal
             Text(
               auth.nombreCompleto,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
-            Text(auth.email ?? 'test@test.com', style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 32),
-            _buildInfoCard(
-              icon: Icons.person_outline,
-              title: 'Mis Datos',
-              subtitle: 'Nombre: ${auth.nombreCompleto}\nID: ${auth.uid ?? "N/A"}',
-            ),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              icon: Icons.shopping_bag_outlined,
-              title: 'Historial',
-              subtitle: 'Toca la pestaña de compras para ver detalles',
+            const SizedBox(height: 4),
+            Text(
+              auth.email ?? 'correo@empresa.com',
+              style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  auth.logout();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
-                  foregroundColor: Colors.red,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: BorderSide(color: Colors.red.shade100),
-                ),
-                child: const Text('Cerrar Sesión', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            // Tarjetas de información y acciones
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  _buildSectionHeader('INFORMACIÓN DE LA CUENTA'),
+                  const SizedBox(height: 12),
+                  _buildInfoCard(
+                    icon: Icons.person_outline_rounded,
+                    iconColor: Colors.blue.shade800,
+                    title: 'Nombres Completos',
+                    value: auth.nombreCompleto,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoCard(
+                    icon: Icons.alternate_email_rounded,
+                    iconColor: Colors.purple.shade700,
+                    title: 'Correo Electrónico',
+                    value: auth.email ?? 'N/A',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoCard(
+                    icon: Icons.vpn_key_outlined,
+                    iconColor: Colors.amber.shade800,
+                    title: 'Database ID',
+                    value: auth.uid ?? 'N/A',
+                    isCode: true,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoCard(
+                    icon: Icons.security_rounded,
+                    iconColor: Colors.teal.shade700,
+                    title: 'Firebase UID',
+                    value: auth.firebaseUid ?? 'N/A',
+                    isCode: true,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('SESIÓN'),
+                  const SizedBox(height: 12),
+                  
+                  // Botón de cerrar sesión premium
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        auth.logout();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const LoginPage()),
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.logout_rounded, size: 20),
+                      label: const Text(
+                        'Cerrar Sesión',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFEE2E2),
+                        foregroundColor: const Color(0xFFDC2626),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: const BorderSide(color: Color(0xFFFCA5A5), width: 1),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ],
@@ -183,26 +329,76 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard({required IconData icon, required String title, required String subtitle}) {
+  Widget _buildSectionHeader(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+    bool isCode = false,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.01),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.black54),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B),
+                    fontFamily: isCode ? 'monospace' : null,
+                  ),
+                ),
               ],
             ),
           ),

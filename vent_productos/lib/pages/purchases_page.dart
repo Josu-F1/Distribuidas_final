@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:js' as js;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/app_models.dart';
@@ -490,11 +493,11 @@ class _PurchasesPageState extends State<PurchasesPage> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.receipt_long_rounded, color: Colors.black),
-                  SizedBox(width: 8),
-                  Text('Factura XML', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Icon(Icons.receipt_long_rounded, color: Colors.blue.shade900),
+                  const SizedBox(width: 8),
+                  const Text('Factura Digital', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
               IconButton(
@@ -505,7 +508,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
           ),
           content: SizedBox(
             width: double.maxFinite,
-            height: MediaQuery.of(context).size.height * 0.55,
+            height: MediaQuery.of(context).size.height * 0.65,
             child: FutureBuilder<String?>(
               future: _apiService.generateInvoiceFromPurchase(
                 purchase, 
@@ -528,52 +531,31 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
                 final xmlContent = snapshot.data!;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade100),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green, size: 16),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Factura generada exitosamente en Render.',
-                              style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                return DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      const TabBar(
+                        labelColor: Colors.black,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: Colors.black,
+                        labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                        tabs: [
+                          Tab(icon: Icon(Icons.picture_as_pdf_rounded, size: 20), text: 'Vista Previa'),
+                          Tab(icon: Icon(Icons.code_rounded, size: 20), text: 'XML Original'),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: SingleChildScrollView(
-                          child: Text(
-                            xmlContent,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: Colors.black87,
-                            ),
-                          ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildVisualInvoice(context, purchase, auth.email ?? "test@test.com", auth.nombreCompleto),
+                            _buildXmlCodeView(context, xmlContent, purchase),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 );
               },
             ),
@@ -592,5 +574,327 @@ class _PurchasesPageState extends State<PurchasesPage> {
         );
       },
     );
+  }
+
+  Widget _buildVisualInvoice(BuildContext context, Purchase purchase, String email, String clientName) {
+    final cleanDate = purchase.fechaCompra.isNotEmpty 
+        ? purchase.fechaCompra.split('T')[0] 
+        : DateTime.now().toIso8601String().split('T')[0];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.01),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ]
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cabecera de la factura
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'P',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'TECHSTORE 360',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.2),
+                  ),
+                  const Text(
+                    'FACTURACIÓN ELECTRÓNICA',
+                    style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Datos del documento
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Nº FACTURA', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'F001-${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}', 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('FECHA EMISIÓN', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(
+                      cleanDate, 
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Información del Cliente
+            const Text('DATOS DEL RECEPTOR', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFF3F4F6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Cliente: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(clientName, style: const TextStyle(fontSize: 11, color: Colors.black87))),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text('Email: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(email, style: const TextStyle(fontSize: 11, color: Colors.black87))),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Row(
+                    children: [
+                      Text('RUC/Ced: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Text('1899999999', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Row(
+                    children: [
+                      Text('Dirección: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Text('Ecuador', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Detalles de la compra
+            const Text('DETALLE DE FACTURA', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: purchase.detalles.length,
+              separatorBuilder: (context, index) => const Divider(color: Color(0xFFF3F4F6), height: 12),
+              itemBuilder: (context, i) {
+                final detail = purchase.detalles[i];
+                final subtotal = detail.cantidad * detail.precioUnitario;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(detail.productoNombre, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                            const SizedBox(height: 2),
+                            Text('${detail.cantidad} x \$${detail.precioUnitario.toStringAsFixed(2)}', 
+                                style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Text('\$${subtotal.toStringAsFixed(2)}', 
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            const SizedBox(height: 12),
+
+            // Totales de la Factura
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Subtotal:', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                Text('\$${purchase.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('IVA (15%):', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                Text('\$${purchase.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade100),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total a Pagar:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
+                  Text('\$${purchase.total.toStringAsFixed(2)}', 
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.green)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Center(
+              child: Text(
+                '¡Gracias por comprar en TechStore 360!',
+                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildXmlCodeView(BuildContext context, String xmlContent, Purchase purchase) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: SingleChildScrollView(
+              child: Text(
+                xmlContent,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: xmlContent));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('XML copiado al portapapeles'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                label: const Text('Copiar XML'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _downloadXmlFile(context, xmlContent, purchase),
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: const Text('Descargar XML'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _downloadXmlFile(BuildContext context, String xmlContent, Purchase purchase) {
+    if (kIsWeb) {
+      try {
+        final escapedXml = xmlContent.replaceAll("'", "\\'").replaceAll("\n", "\\n").replaceAll("\r", "");
+        final safeId = purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase();
+        js.context.callMethod('eval', [
+          '''
+          var element = document.createElement('a');
+          element.setAttribute('href', 'data:text/xml;charset=utf-8,' + encodeURIComponent('$escapedXml'));
+          element.setAttribute('download', 'Factura-$safeId.xml');
+          element.style.display = 'none';
+          document.body.appendChild(element);
+          element.click();
+          document.body.removeChild(element);
+          '''
+        ]);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('XML descargado exitosamente'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        print('Error al descargar en web: $e');
+      }
+    } else {
+      // En móvil, copiamos al portapapeles y avisamos
+      Clipboard.setData(ClipboardData(text: xmlContent));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('XML copiado al portapapeles (Opción de guardado local no disponible en móvil)'),
+          backgroundColor: Colors.black87,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
