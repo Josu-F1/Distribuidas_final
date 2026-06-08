@@ -95,8 +95,10 @@ class ApiService {
     String? direccionOrigen,
     String? direccionDestino,
     String metodoEntrega,
-    Map<String, String> headers,
-  ) async {
+    Map<String, String> headers, {
+    String estado = 'PENDIENTE',
+    String? metodoPago,
+  }) async {
     print('Enviando compra a: $baseUrl/api/compras');
     try {
       final requestHeaders = {
@@ -112,12 +114,29 @@ class ApiService {
           'direccion_origen': direccionOrigen,
           'direccion_destino': direccionDestino,
           'metodo_entrega': metodoEntrega,
+          'estado': estado,
+          if (metodoPago != null) 'metodo_pago': metodoPago,
         }),
       ).timeout(const Duration(seconds: 30));
       
       if (response.statusCode == 201) {
         final body = jsonDecode(response.body);
-        return body['compra_id']?.toString();
+        final cid = body['compra_id']?.toString();
+        
+        // Si el estado debe ser PAGADA (ej. por PayPal), intentar forzar la actualización
+        if (cid != null && estado == 'PAGADA') {
+          try {
+            await http.put(
+              Uri.parse('$baseUrl/api/compras/$cid'),
+              headers: requestHeaders,
+              body: jsonEncode({'estado': 'PAGADA'}),
+            ).timeout(const Duration(seconds: 15));
+          } catch (_) {
+            // Ignorar errores si el endpoint no existe
+          }
+        }
+        
+        return cid;
       }
       return null;
     } catch (e) {

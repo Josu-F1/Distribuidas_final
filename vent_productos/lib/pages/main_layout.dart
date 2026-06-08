@@ -1410,6 +1410,8 @@ class _CartModalState extends State<CartModal> {
         _metodoEntrega == 'PICKUP' ? 'Retiro en local' : dirDestino,
         _metodoEntrega,
         auth.headers,
+        estado: _metodoPago == 'PAYPAL' ? 'PAGADA' : 'PENDIENTE',
+        metodoPago: _metodoPago,
       );
 
       if (mounted) {
@@ -1419,6 +1421,12 @@ class _CartModalState extends State<CartModal> {
       }
 
       if (compraId != null) {
+        // Guardar copia de los items antes de vaciar el carrito
+        final itemsToInvoice = List<CartItem>.from(cart.items);
+
+        // Ejecutar vaciado de carrito inmediatamente al saber que se completó
+        cart.clearCart();
+
         // Generar factura de forma totalmente asíncrona sin bloquear la interfaz de usuario
         apiService.generateInvoice(
           compraId, 
@@ -1426,14 +1434,15 @@ class _CartModalState extends State<CartModal> {
           _isConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto,
           _isConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999"),
           _isConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999"),
-          cart.items
+          itemsToInvoice // Pasamos la copia de CartItem
         ).catchError((err) {
           print("Error al generar factura en background: $err");
           return null;
         });
 
-        if (context.mounted) {
-          cart.clearCart();
+        widget.onPurchaseSuccess(); // Redirigir siempre independientemente de `mounted`
+
+        if (mounted) {
           Navigator.pop(context); // Cerrar el modal del carrito
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1442,7 +1451,6 @@ class _CartModalState extends State<CartModal> {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          widget.onPurchaseSuccess();
         }
       } else {
         if (context.mounted) {

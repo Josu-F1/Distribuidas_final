@@ -10,10 +10,17 @@ class CartProvider with ChangeNotifier {
   double get iva => subtotal * 0.15;
   double get total => subtotal + iva;
 
-  void addToCart(Product product) {
+  void addToCart(Product product, {int quantity = 1}) {
     final index = _items.indexWhere((item) => item.product.id == product.id);
     if (index < 0) {
-      _items.add(CartItem(product: product, quantity: 1));
+      _items.add(CartItem(product: product, quantity: quantity));
+      notifyListeners();
+    } else {
+      if (_items[index].quantity + quantity <= _items[index].product.stock) {
+        _items[index].quantity += quantity;
+      } else {
+        _items[index].quantity = _items[index].product.stock;
+      }
       notifyListeners();
     }
   }

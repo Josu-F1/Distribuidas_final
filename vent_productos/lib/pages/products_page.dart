@@ -78,20 +78,6 @@ class _ProductsPageState extends State<ProductsPage> {
 
   void _handleAddToCart(Product product) {
     final cart = Provider.of<CartProvider>(context, listen: false);
-    final alreadyInCart = cart.items.any((item) => item.product.id == product.id);
-
-    if (alreadyInCart) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${product.nombre} ya está en el carrito'),
-          duration: const Duration(seconds: 1),
-          backgroundColor: const Color(0xFF1E1E1E),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
 
     cart.addToCart(product);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1109,9 +1095,7 @@ class _ProductsPageState extends State<ProductsPage> {
                               onPressed: p.stock > 0
                                   ? () {
                                       final cart = Provider.of<CartProvider>(context, listen: false);
-                                      for (int i = 0; i < localQuantity; i++) {
-                                        cart.addToCart(p);
-                                      }
+                                      cart.addToCart(p, quantity: localQuantity);
                                       Navigator.pop(context);
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
