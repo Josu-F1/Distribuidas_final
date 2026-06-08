@@ -216,69 +216,55 @@ class _PurchasesPageState extends State<PurchasesPage> {
               ),
             );
           } else if (!snapshot.hasData || snapshot.data!.filtered.isEmpty) {
-            final data = snapshot.data!;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 20),
-                  Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No tienes compras registradas',
-                    style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: brandRed.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.shopping_bag_outlined,
+                      size: 80,
+                      color: brandRed,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                  const Text(
+                    'Aún no hay compras',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'DEBUG INFO (Filtro de Usuario):',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB91C1C), fontSize: 13),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text('• Tus IDs locales:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
-                        Text('  - Database ID (Local ID): "${auth.databaseId}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                        Text('  - Firebase UID: "${auth.firebaseUid}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                        Text('  - Correo: "${auth.email}"', style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                        const SizedBox(height: 12),
-                        Text('• Total compras encontradas: ${data.totalCount}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
-                        const SizedBox(height: 6),
-                        const Text('• Compras en BD (FACTURA: "USUARIO_EMAIL"):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
-                        const SizedBox(height: 4),
-                        if (data.userIdsInDb.isEmpty)
-                          const Text('  - Ninguna compra registrada en la base de datos.', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic))
-                        else
-                          ...data.userIdsInDb.map((item) => Text('  - $item', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.black87))),
-                        const SizedBox(height: 12),
-                        const Text('• Ejemplo de Compra Cruda (Raw Sample):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
-                        const SizedBox(height: 4),
-                        Container(
-                          width: double.infinity,
-                          constraints: const BoxConstraints(maxHeight: 200),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              data.rawSample,
-                              style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.black87),
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Tus pedidos aparecerán aquí\nuna vez que los realices.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: _refreshPurchases,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Actualizar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: brandRed,
+                      elevation: 0,
+                      side: BorderSide(color: brandRed.withOpacity(0.2)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   )
                 ],
@@ -357,10 +343,42 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
               Expanded(
                 child: filteredPurchases.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No se encontraron compras para tu búsqueda.',
-                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: brandRed.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 64,
+                                color: brandRed,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Aún no hay compras',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Tus pedidos aparecerán aquí\nuna vez que los realices.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.separated(
@@ -387,57 +405,92 @@ class _PurchasesPageState extends State<PurchasesPage> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFF3F4F6)),
+                              border: Border.all(color: const Color(0xFFF3F4F6), width: 1.5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
                                 )
                               ],
                             ),
-                            child: Theme(
-                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            clipBehavior: Clip.antiAlias,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    width: 4,
+                                    color: isPagada ? Colors.green : Colors.orange,
+                                  ),
+                                ),
+                              ),
+                              child: Theme(
+                                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                               child: ExpansionTile(
                                 tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                                 childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                                 title: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Factura #${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          formattedDate,
-                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                        ),
-                                      ],
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: brandRed.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: const Icon(
+                                              Icons.receipt_outlined,
+                                              color: brandRed,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Factura #${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  formattedDate,
+                                                  style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                           '\$${purchase.total.toStringAsFixed(2)}',
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black),
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.black87),
                                         ),
-                                        const SizedBox(height: 6),
+                                        const SizedBox(height: 4),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: isPagada ? Colors.green[50] : Colors.orange[50],
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: isPagada ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
+                                            ),
                                           ),
                                           child: Text(
                                             purchase.estado.toUpperCase(),
                                             style: TextStyle(
-                                              color: isPagada ? Colors.green[700] : Colors.orange[700],
-                                              fontSize: 10,
+                                              color: isPagada ? Colors.green[700] : Colors.orange[800],
+                                              fontSize: 9,
                                               fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
                                             ),
                                           ),
                                         ),
@@ -668,6 +721,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                   ),
                                 ],
                               ),
+                            ),
                             ),
                           );
                         },

@@ -507,15 +507,17 @@ class _ProductsPageState extends State<ProductsPage> {
                 itemCount: featuredProducts.length,
                 itemBuilder: (context, index) {
                   final p = featuredProducts[index];
-                  return Container(
-                    width: 160,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFEFEFEF)),
-                    ),
-                    child: Column(
+                  return GestureDetector(
+                    onTap: () => _showProductDetailsModal(context, p),
+                    child: Container(
+                      width: 160,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEFEFEF)),
+                      ),
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Imagen con badge de descuento
@@ -609,6 +611,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           ),
                         )
                       ],
+                    ),
                     ),
                   );
                 },
@@ -718,22 +721,24 @@ class _ProductsPageState extends State<ProductsPage> {
                   itemCount: _filteredProducts.length,
                   itemBuilder: (context, index) {
                     final product = _filteredProducts[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFEFEFEF)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x02000000),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      child: Row(
+                    return GestureDetector(
+                      onTap: () => _showProductDetailsModal(context, product),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFEFEFEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x02000000),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            )
+                          ],
+                        ),
+                        child: Row(
                         children: [
                           // Imagen
                           ClipRRect(
@@ -815,6 +820,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           ),
                         ],
                       ),
+                    ),
                     );
                   },
                 ),
