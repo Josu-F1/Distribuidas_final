@@ -32,11 +32,29 @@ class PurchasesPage extends StatefulWidget {
 class _PurchasesPageState extends State<PurchasesPage> {
   final ApiService _apiService = ApiService();
   late Future<PurchasesData> _purchasesFuture;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 4;
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      if (mounted) {
+        setState(() {
+          _searchQuery = _searchController.text;
+          _currentPage = 1;
+        });
+      }
+    });
     _refreshPurchases();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _refreshPurchases() {
@@ -75,6 +93,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     stock: 0,
                     categoria: '',
                     activo: false,
+                    eliminado: false,
                     imagenUrl: '',
                   ),
                 );
@@ -268,213 +287,416 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
           final purchases = snapshot.data!.filtered;
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(24),
-            itemCount: purchases.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final purchase = purchases[index];
-              
-              // Formatear Fecha de Compra
-              String formattedDate;
-              final parsedDate = DateTime.tryParse(purchase.fechaCompra);
-              if (parsedDate != null) {
-                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(parsedDate);
-              } else {
-                formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
-              }
+          // 1. Filtrar las compras
+          final filteredPurchases = purchases.where((purchase) {
+            final query = _searchQuery.toLowerCase().trim();
+            if (query.isEmpty) return true;
 
-              final isPagada = purchase.estado.toUpperCase() == 'PAGADA' ||
-                               purchase.estado.toUpperCase() == 'COMPLETADO' ||
-                               purchase.estado.toUpperCase() == 'FACTURADA';
+            final safeId = purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase();
+            final matchInvoiceId = 'factura #$safeId'.toLowerCase().contains(query) ||
+                purchase.id.toLowerCase().contains(query);
+            final matchProduct = purchase.detalles.any((detail) =>
+                detail.productoNombre.toLowerCase().contains(query));
+            return matchInvoiceId || matchProduct;
+          }).toList();
 
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFF3F4F6)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Factura #${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              formattedDate,
-                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '\$${purchase.total.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isPagada ? Colors.green[50] : Colors.orange[50],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                purchase.estado.toUpperCase(),
-                                style: TextStyle(
-                                  color: isPagada ? Colors.green[700] : Colors.orange[700],
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+          // 2. Paginación
+          final totalItems = filteredPurchases.length;
+          final totalPages = (totalItems / _itemsPerPage).ceil();
+          int currentPage = _currentPage;
+          if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+          }
+          final startIndex = (currentPage - 1) * _itemsPerPage;
+          final endIndex = startIndex + _itemsPerPage;
+          final paginatedPurchases = filteredPurchases.sublist(
+            startIndex,
+            endIndex > totalItems ? totalItems : endIndex,
+          );
+
+          return Column(
+            children: [
+              // Buscador de compras
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por nº de factura o producto...',
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
                     ),
-                    children: [
-                      const Divider(color: Color(0xFFF3F4F6), height: 24),
-                      
-                      // Encabezado de la lista de productos
-                      const Row(
-                        children: [
-                          Icon(Icons.list_alt_rounded, size: 16, color: Colors.black54),
-                          SizedBox(width: 8),
-                          Text(
-                            'Detalle del Pedido',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 1.2),
+                    ),
+                  ),
+                ),
+              ),
 
-                      // Lista de productos comprados
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: purchase.detalles.length,
-                        itemBuilder: (context, i) {
-                          final detail = purchase.detalles[i];
-                          final subtotalProducto = detail.cantidad * detail.precioUnitario;
+              Expanded(
+                child: filteredPurchases.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No se encontraron compras para tu búsqueda.',
+                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        itemCount: paginatedPurchases.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final purchase = paginatedPurchases[index];
+                          
+                          // Formatear Fecha de Compra
+                          String formattedDate;
+                          final parsedDate = DateTime.tryParse(purchase.fechaCompra);
+                          if (parsedDate != null) {
+                            formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(parsedDate);
+                          } else {
+                            formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+                          }
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                          final isPagada = purchase.estado.toUpperCase() == 'PAGADA' ||
+                                           purchase.estado.toUpperCase() == 'COMPLETADO' ||
+                                           purchase.estado.toUpperCase() == 'FACTURADA';
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFF3F4F6)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                              child: ExpansionTile(
+                                tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                                title: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Factura #${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          formattedDate,
+                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          '\$${purchase.total.toStringAsFixed(2)}',
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: isPagada ? Colors.green[50] : Colors.orange[50],
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            purchase.estado.toUpperCase(),
+                                            style: TextStyle(
+                                              color: isPagada ? Colors.green[700] : Colors.orange[700],
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                children: [
+                                  const Divider(color: Color(0xFFF3F4F6), height: 24),
+                                  
+                                  // Encabezado de la lista de productos
+                                  const Row(
                                     children: [
+                                      Icon(Icons.list_alt_rounded, size: 16, color: Colors.black54),
+                                      SizedBox(width: 8),
                                       Text(
-                                        detail.productoNombre.isNotEmpty 
-                                            ? detail.productoNombre 
-                                            : 'Producto #${detail.productoId.substring(0, detail.productoId.length >= 5 ? 5 : detail.productoId.length)}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${detail.cantidad} x \$${detail.precioUnitario.toStringAsFixed(2)}',
-                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        'Detalle del Pedido',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54),
                                       ),
                                     ],
                                   ),
-                                ),
-                                Text(
-                                  '\$${subtotalProducto.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-                                ),
-                              ],
+                                  const SizedBox(height: 12),
+
+                                  // Lista de productos comprados
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: purchase.detalles.length,
+                                    itemBuilder: (context, i) {
+                                      final detail = purchase.detalles[i];
+                                      final subtotalProducto = detail.cantidad * detail.precioUnitario;
+
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    detail.productoNombre.isNotEmpty 
+                                                        ? detail.productoNombre 
+                                                        : 'Producto #${detail.productoId.substring(0, detail.productoId.length >= 5 ? 5 : detail.productoId.length)}',
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '${detail.cantidad} x \$${detail.precioUnitario.toStringAsFixed(2)}',
+                                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Text(
+                                              '\$${subtotalProducto.toStringAsFixed(2)}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                  const SizedBox(height: 16),
+                                  const Divider(color: Color(0xFFF3F4F6), height: 1),
+                                  const SizedBox(height: 16),
+
+                                  // Sección de Direcciones (Origen y Destino)
+                                  if (purchase.direccionOrigen != null || purchase.direccionDestino != null) ...[
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.local_shipping_outlined, size: 16, color: Colors.black54),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Información de Envío',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFFF3F4F6)),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Icon(Icons.store_mall_directory_outlined, size: 16, color: Colors.blueGrey),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Origen / Despacho:', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      purchase.direccionOrigen ?? 'No especificado',
+                                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const Padding(
+                                            padding: EdgeInsets.only(left: 7.0, top: 4.0, bottom: 4.0),
+                                            child: SizedBox(
+                                              height: 16,
+                                              child: VerticalDivider(width: 2, color: Colors.grey, thickness: 1),
+                                            ),
+                                          ),
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.redAccent),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Destino / Entrega:', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      purchase.direccionDestino ?? 'No especificado',
+                                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Divider(color: Color(0xFFF3F4F6), height: 1),
+                                    const SizedBox(height: 16),
+                                  ],
+
+                                  // Cuadro de Resumen de Totales
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF9FAFB),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFF3F4F6)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Subtotal:', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                            Text('\$${purchase.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('IVA (15%):', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                            Text('\$${purchase.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Divider(color: Color(0xFFE5E7EB), height: 1),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Total Compra:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                            Text(
+                                              '\$${purchase.total.toStringAsFixed(2)}',
+                                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.green),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 40,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _showInvoiceDialog(context, purchase),
+                                      icon: const Icon(Icons.receipt_long_rounded, size: 18),
+                                      label: const Text('Generar/Ver Factura XML'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
                       ),
+              ),
 
-                      const SizedBox(height: 16),
-                      const Divider(color: Color(0xFFF3F4F6), height: 1),
-                      const SizedBox(height: 16),
-
-                      // Cuadro de Resumen de Totales
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFF3F4F6)),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Subtotal:', style: TextStyle(fontSize: 12, color: Colors.black54)),
-                                Text('\$${purchase.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('IVA (15%):', style: TextStyle(fontSize: 12, color: Colors.black54)),
-                                Text('\$${purchase.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            const Divider(color: Color(0xFFE5E7EB), height: 1),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Total Compra:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
-                                Text(
-                                  '\$${purchase.total.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.green),
-                                ),
-                              ],
-                            ),
-                          ],
+              // Controles de Paginación
+              if (totalPages > 1)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: currentPage > 1
+                            ? () => setState(() => _currentPage--)
+                            : null,
+                        icon: const Icon(Icons.chevron_left, size: 18),
+                        label: const Text('Anterior'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          elevation: 0,
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 40,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _showInvoiceDialog(context, purchase),
-                          icon: const Icon(Icons.receipt_long_rounded, size: 18),
-                          label: const Text('Generar/Ver Factura XML'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      Text(
+                        'Pág. $currentPage de $totalPages',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: currentPage < totalPages
+                            ? () => setState(() => _currentPage++)
+                            : null,
+                        label: const Text('Siguiente'),
+                        icon: const Icon(Icons.chevron_right, size: 18),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          elevation: 0,
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            },
+            ],
           );
         },
       ),
@@ -483,100 +705,174 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   void _showInvoiceDialog(BuildContext context, Purchase purchase) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    
+    bool forceConsumidorFinal = purchase.usuarioNombres == 'Consumidor Final';
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final emailParam = forceConsumidorFinal ? "consumidorfinal@techstore.com" : (auth.email ?? "test@test.com");
+            final nameParam = forceConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto;
+            final phoneParam = forceConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999");
+            final cedulaParam = forceConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999");
+
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.receipt_long_rounded, color: Colors.blue.shade900),
-                  const SizedBox(width: 8),
-                  const Text('Factura Digital', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.grey),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: MediaQuery.of(context).size.height * 0.65,
-            child: FutureBuilder<String?>(
-              future: _apiService.generateInvoiceFromPurchase(
-                purchase, 
-                auth.email ?? "test@test.com", 
-                auth.nombreCompleto
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.black));
-                }
-                
-                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                  return const Center(
-                    child: Text(
-                      'Error al contactar con el servicio de facturación',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  );
-                }
-
-                final xmlContent = snapshot.data!;
-
-                return DefaultTabController(
-                  length: 2,
-                  child: Column(
+                  Row(
                     children: [
-                      const TabBar(
-                        labelColor: Colors.black,
-                        unselectedLabelColor: Colors.grey,
-                        indicatorColor: Colors.black,
-                        labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                        tabs: [
-                          Tab(icon: Icon(Icons.picture_as_pdf_rounded, size: 20), text: 'Vista Previa'),
-                          Tab(icon: Icon(Icons.code_rounded, size: 20), text: 'XML Original'),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildVisualInvoice(context, purchase, auth.email ?? "test@test.com", auth.nombreCompleto),
-                            _buildXmlCodeView(context, xmlContent, purchase),
-                          ],
-                        ),
-                      ),
+                      Icon(Icons.receipt_long_rounded, color: Colors.blue.shade900),
+                      const SizedBox(width: 8),
+                      const Text('Factura Digital', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
               ),
-              child: const Text('Cerrar'),
-            ),
-          ],
+              content: SizedBox(
+                width: double.maxFinite,
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: forceConsumidorFinal,
+                          activeColor: Colors.black,
+                          onChanged: (val) {
+                            setDialogState(() {
+                              forceConsumidorFinal = val ?? false;
+                            });
+                          },
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'Generar como Consumidor Final',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 10),
+                    Expanded(
+                      child: FutureBuilder<String?>(
+                        future: _apiService.generateInvoiceFromPurchase(
+                          purchase, 
+                          emailParam, 
+                          nameParam,
+                          phoneParam,
+                          cedulaParam,
+                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(color: Colors.black));
+                          }
+                          
+                          if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                            final errorMsg = snapshot.hasError ? snapshot.error.toString() : '';
+                            final isFetchError = errorMsg.contains('Failed to fetch') || errorMsg.contains('ClientException');
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.red),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'Error al contactar el servicio de facturación',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 15),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      isFetchError
+                                          ? 'El servidor en Render se encuentra en reposo (Free Tier). Está despertando (toma hasta 50 segundos la primera vez). Por favor, intenta de nuevo.'
+                                          : 'Detalle: ${snapshot.error ?? "Respuesta vacía o error de red"}',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _showInvoiceDialog(context, purchase);
+                                      },
+                                      icon: const Icon(Icons.refresh, size: 16),
+                                      label: const Text('Reintentar ahora'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        foregroundColor: Colors.white,
+                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          final xmlContent = snapshot.data!;
+
+                          return DefaultTabController(
+                            length: 2,
+                            child: Column(
+                              children: [
+                                const TabBar(
+                                  labelColor: Colors.black,
+                                  unselectedLabelColor: Colors.grey,
+                                  indicatorColor: Colors.black,
+                                  labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                                  tabs: [
+                                    Tab(icon: Icon(Icons.picture_as_pdf_rounded, size: 20), text: 'Vista Previa'),
+                                    Tab(icon: Icon(Icons.code_rounded, size: 20), text: 'XML Original'),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Expanded(
+                                  child: TabBarView(
+                                    children: [
+                                      _buildVisualInvoice(context, purchase, emailParam, nameParam, phoneParam, cedulaParam),
+                                      _buildXmlCodeView(context, xmlContent, purchase),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Cerrar'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildVisualInvoice(BuildContext context, Purchase purchase, String email, String clientName) {
+  Widget _buildVisualInvoice(BuildContext context, Purchase purchase, String email, String clientName, String phone, String cedula) {
     final cleanDate = purchase.fechaCompra.isNotEmpty 
         ? purchase.fechaCompra.split('T')[0] 
         : DateTime.now().toIso8601String().split('T')[0];
@@ -680,7 +976,6 @@ class _PurchasesPageState extends State<PurchasesPage> {
                       Expanded(child: Text(clientName, style: const TextStyle(fontSize: 11, color: Colors.black87))),
                     ],
                   ),
-                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Text('Email: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
@@ -688,17 +983,31 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Row(
+                  Row(
                     children: [
-                      Text('RUC/Ced: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Text('1899999999', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                      const Text('Teléfono: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(phone, style: const TextStyle(fontSize: 11, color: Colors.black87))),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Row(
+                  Row(
                     children: [
-                      Text('Dirección: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Text('Ecuador', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                      const Text('RUC/Ced: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(cedula, style: const TextStyle(fontSize: 11, color: Colors.black87))),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text('Despachado desde: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(purchase.direccionOrigen ?? 'TechStore Matriz', style: const TextStyle(fontSize: 11, color: Colors.black87))),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text('Entregado en: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                      Expanded(child: Text(purchase.direccionDestino ?? 'Ecuador', style: const TextStyle(fontSize: 11, color: Colors.black87))),
                     ],
                   ),
                 ],

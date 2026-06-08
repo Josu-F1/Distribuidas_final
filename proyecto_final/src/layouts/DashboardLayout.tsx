@@ -67,58 +67,55 @@ const DashboardLayout: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       {/* Header */}
-      <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-10">
+      <header className="h-16 bg-white/70 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm shadow-black/[0.01]">
         <div className="flex items-center gap-8">
           <div 
-            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 cursor-pointer hover:opacity-95 transition-all group"
             onClick={() => navigate('/dashboard')}
           >
-            <div className="bg-black text-white p-1 rounded">
-              <span className="font-bold text-xs">P</span>
+            <div className="bg-black text-white w-7.5 h-7.5 rounded-xl flex items-center justify-center shadow-md shadow-black/10 group-hover:scale-105 transition-transform duration-300">
+              <span className="font-extrabold text-sm tracking-tighter">P</span>
             </div>
-            <span className="font-bold text-base">ProductTech</span>
+            <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-black transition-colors">ProductTech<span className="text-gray-400 font-medium">360</span></span>
           </div>
-          <nav className="flex items-center gap-1">
-            <NavLink 
-              to="/dashboard" 
-              end
-              className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
-            >
-              Inicio
-            </NavLink>
-            <NavLink 
-              to="/dashboard/users" 
-              className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
-            >
-              Usuarios
-            </NavLink>
-            <NavLink 
-              to="/dashboard/products" 
-              className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
-            >
-              Productos
-            </NavLink>
-            <NavLink 
-              to="/dashboard/purchases" 
-              className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
-            >
-              Compras
-            </NavLink>
-            <NavLink 
-              to="/dashboard/account" 
-              className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-400 hover:text-black'}`}
-            >
-              Mi Cuenta
-            </NavLink>
+          <nav className="flex items-center gap-1.5">
+            {[
+              { to: '/dashboard', label: 'Inicio', end: true },
+              { to: '/dashboard/users', label: 'Usuarios' },
+              { to: '/dashboard/products', label: 'Productos' },
+              { to: '/dashboard/purchases', label: 'Compras' },
+              { to: '/dashboard/account', label: 'Mi Cuenta' }
+            ].map((link) => (
+              <NavLink 
+                key={link.to}
+                to={link.to} 
+                end={link.end}
+                className={({ isActive }) => `px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                  isActive 
+                    ? 'text-black bg-gray-150/80 shadow-sm shadow-black/[0.02]' 
+                    : 'text-slate-400 hover:text-slate-950 hover:bg-gray-50/50'
+                }`}
+              >
+                {link.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 ml-2 pl-4 border-l border-gray-100">
-            <button onClick={() => navigate('/login')} className="text-gray-400 hover:text-red-500">
-              <LogOut size={18} />
+            <button 
+              onClick={async () => {
+                await signOut(auth);
+                toast.success('Sesión cerrada correctamente');
+                navigate('/login');
+              }} 
+              className="w-9 h-9 rounded-xl bg-gray-50 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100 border border-gray-150/40 flex items-center justify-center transition-all duration-300"
+              title="Cerrar Sesión"
+            >
+              <LogOut size={16} />
             </button>
           </div>
         </div>

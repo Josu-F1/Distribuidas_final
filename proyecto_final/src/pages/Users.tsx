@@ -267,57 +267,80 @@ const Users: React.FC = () => {
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">Cargando usuarios...</td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">Cargando usuarios...</td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron usuarios</td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">No se encontraron usuarios</td>
                 </tr>
               ) : filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
+                <tr 
+                  key={user.id} 
+                  className={`hover:bg-slate-50/45 transition-all duration-200 group text-sm text-slate-600 ${
+                    user.estado ? 'hover:-translate-y-[0.5px]' : 'opacity-60 bg-slate-50/10'
+                  }`}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center font-bold text-gray-600 text-xs uppercase border border-gray-100 group-hover:border-black/10 group-hover:bg-white transition-all duration-300">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs uppercase border transition-all duration-300 ${
+                        user.estado 
+                          ? 'bg-slate-50 text-slate-650 border-slate-100 group-hover:border-slate-250 group-hover:bg-white' 
+                          : 'bg-slate-100/50 text-slate-400 border-slate-150'
+                      }`}>
                         {user.nombres.charAt(0)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{user.nombres} {user.apellidos}</span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Cliente</span>
+                        <span className={`font-bold transition-all duration-355 ${
+                          user.estado 
+                            ? 'text-slate-900 group-hover:text-black' 
+                            : 'text-slate-400 line-through'
+                        }`}>
+                          {user.nombres} {user.apellidos}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Cliente</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-medium">{user.email}</td>
-                  <td className="px-6 py-4 font-medium">{user.telefono || '-'}</td>
+                  <td className={`px-6 py-4 font-medium transition-all duration-355 ${!user.estado && 'text-slate-400 line-through'}`}>
+                    {user.email}
+                  </td>
+                  <td className={`px-6 py-4 font-medium transition-all duration-355 ${!user.estado && 'text-slate-400 line-through'}`}>
+                    {user.telefono || '-'}
+                  </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => toggleStatus(user)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider border transition-all ${
                         user.estado
-                          ? 'bg-black text-white border-black/10 hover:bg-black/90'
-                          : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+                          : 'bg-rose-50 text-rose-750 border-rose-100 hover:bg-rose-100'
                       }`}
                     >
-                      <div className={`w-1.5 h-1.5 rounded-full ${user.estado ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
-                      {user.estado ? 'ACTIVO' : 'DESACTIVADO'}
+                      <div className={`w-1.5 h-1.5 rounded-full ${user.estado ? 'bg-emerald-500 animate-pulse' : 'bg-rose-450'}`}></div>
+                      {user.estado ? 'ACTIVO' : 'BORRADO LÓGICO'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-gray-450 text-xs font-semibold">
+                  <td className="px-6 py-4 text-slate-450 text-xs font-semibold">
                     {new Date(user.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">
                        <button
-                         className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
+                         className="p-2 text-slate-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-150 rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:border-transparent"
                          onClick={() => handleEditClick(user)}
+                         disabled={!user.estado}
+                         title={user.estado ? "Editar" : "Reactive el usuario para editar"}
                        >
                          <Edit2 size={15} />
                        </button>
                        <button
-                         className={`p-2 text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all ${
-                           user.estado ? 'hover:text-red-500' : 'hover:text-green-500'
+                         className={`p-2 border border-transparent rounded-xl transition-all ${
+                           user.estado 
+                             ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 hover:shadow-sm' 
+                             : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 hover:shadow-sm'
                          }`}
                          onClick={() => confirmDelete(user)}
-                         title={user.estado ? "Desactivar" : "Activar"}
+                         title={user.estado ? "Desactivar (Borrado Lógico)" : "Reactivar"}
                        >
                          {user.estado ? <UserX size={15} /> : <UserCheck size={15} />}
                        </button>

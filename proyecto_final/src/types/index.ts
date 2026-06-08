@@ -6,7 +6,9 @@ export interface User {
   email: string;
   rol: 'ADMIN' | 'CLIENTE';
   telefono?: string;
+  cedula?: string;
   estado: boolean;
+  eliminado?: boolean;
   created_at: string;
 }
 
@@ -18,6 +20,7 @@ export interface Product {
   stock: number;
   imagen_url?: string;
   activo: boolean;
+  eliminado?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -30,4 +33,7 @@ export interface Purchase {
   iva: number;
   total: number;
   estado: 'PENDIENTE' | 'PAGADA' | 'FACTURADA' | 'CANCELADA';
+  direccion_origen?: string;
+  direccion_destino?: string;
+  eliminado?: boolean;
 }

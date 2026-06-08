@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getPurchases, getUsers, getProducts } from '../services/api';
 import { Purchase, User, Product } from '../types';
-import { ShoppingCart, Calendar, CreditCard, CheckCircle, Clock, Archive, RotateCcw, Eye, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Calendar, CreditCard, CheckCircle, Clock, Archive, RotateCcw, Eye, X, Search, ChevronLeft, ChevronRight, MapPin, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Purchases: React.FC = () => {
@@ -77,6 +77,15 @@ const Purchases: React.FC = () => {
     const usrObj = (purchase as any).usuario || (purchase as any).user || (purchase as any).cliente;
     if (usrObj && typeof usrObj === 'object') {
       return `${usrObj.nombres || ''} ${usrObj.apellidos || ''}`.trim() || usrObj.email || usrObj.id || 'Cliente';
+    }
+
+    // Intento de resolución por email (caso especial para usuarios recreados)
+    const anyEmail = (purchase as any).email || (purchase as any).usuario_email || (purchase as any).usuarioEmail;
+    if (anyEmail) {
+      const foundByEmail = users.find(u => u.email.trim().toLowerCase() === anyEmail.trim().toLowerCase());
+      if (foundByEmail) {
+        return `${foundByEmail.nombres} ${foundByEmail.apellidos}`;
+      }
     }
 
     // 2. Intentar capturar cualquier variante del ID de usuario
@@ -261,73 +270,99 @@ const Purchases: React.FC = () => {
                 </tr>
               ) : filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-450 italic">
                     No hay compras en esta vista.
                   </td>
                 </tr>
-              ) : filteredPurchases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(purchase => (
-                <tr key={purchase.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
-                  <td className="px-6 py-4 font-mono text-xs">
-                    <button
-                      onClick={() => setSelectedPurchase(purchase)}
-                      className="font-mono text-black hover:underline focus:outline-none font-bold text-left bg-gray-50 hover:bg-white border border-gray-150 hover:border-black/20 px-2.5 py-1 rounded-lg transition-all"
-                      title="Ver detalle de la compra"
-                    >
-                      #INV-{purchase.id.substring(0, 8)}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{getUserName(purchase)}</span>
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Cliente del sistema</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500 font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={13} className="text-gray-400" />
-                      {new Date(purchase.fecha_compra).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-gray-950">${Number(purchase.total).toFixed(2)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase flex items-center gap-1 w-fit border transition-all ${purchase.estado === 'PAGADA'
-                        ? 'bg-black text-white border-black/10'
-                        : 'bg-gray-100 text-gray-700 border-gray-200'
-                      }`}>
-                      {purchase.estado === 'PAGADA' ? <CheckCircle size={10} /> : <Clock size={10} />}
-                      {purchase.estado}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="inline-flex items-center gap-1.5">
+              ) : filteredPurchases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(purchase => {
+                const isArchived = archivedIds.includes(purchase.id);
+                return (
+                  <tr 
+                    key={purchase.id} 
+                    className={`hover:bg-slate-50/45 transition-all duration-200 group text-sm text-slate-650 ${
+                      !isArchived ? 'hover:-translate-y-[0.5px]' : 'opacity-60 bg-slate-50/10'
+                    }`}
+                  >
+                    <td className="px-6 py-4 font-mono text-xs">
                       <button
                         onClick={() => setSelectedPurchase(purchase)}
-                        className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
-                        title="Ver detalle"
+                        className={`font-mono transition-all font-bold text-left px-2.5 py-1 rounded-lg border ${
+                          isArchived 
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 line-through' 
+                            : 'bg-slate-50 text-slate-900 border-slate-150 hover:bg-white hover:border-slate-350 shadow-sm'
+                        }`}
+                        title="Ver detalle de la compra"
                       >
-                        <Eye size={15} />
+                        #INV-{purchase.id.substring(0, 8)}
                       </button>
-                      {archivedIds.includes(purchase.id) ? (
-                        <button
-                          onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'restore' })}
-                          className="p-2 text-gray-400 hover:text-green-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
-                          title="Restaurar compra"
-                        >
-                          <RotateCcw size={15} />
-                        </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className={`font-bold transition-all duration-300 ${
+                          !isArchived ? 'text-slate-900 group-hover:text-black' : 'text-slate-400 line-through'
+                        }`}>
+                          {getUserName(purchase)}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Cliente del sistema</span>
+                      </div>
+                    </td>
+                    <td className={`px-6 py-4 transition-all duration-300 font-medium ${isArchived ? 'text-slate-400 line-through' : 'text-slate-500'}`}>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={13} className="text-slate-455" />
+                        {new Date(purchase.fecha_compra).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                    <td className={`px-6 py-4 font-bold transition-all duration-300 ${isArchived ? 'text-slate-400 line-through' : 'text-slate-950'}`}>
+                      ${Number(purchase.total).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {isArchived ? (
+                        <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1 w-fit border bg-rose-50 text-rose-750 border-rose-100">
+                          <Clock size={10} />
+                          ARCHIVADA
+                        </span>
                       ) : (
-                        <button
-                          onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'archive' })}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
-                          title="Archivar compra"
-                        >
-                          <Archive size={15} />
-                        </button>
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1 w-fit border transition-all ${
+                          purchase.estado === 'PAGADA'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : 'bg-amber-50 text-amber-700 border-amber-100'
+                        }`}>
+                          {purchase.estado === 'PAGADA' ? <CheckCircle size={10} /> : <Clock size={10} />}
+                          {purchase.estado}
+                        </span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedPurchase(purchase)}
+                          className="p-2 text-slate-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-150 rounded-xl transition-all"
+                          title="Ver detalle"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        {isArchived ? (
+                          <button
+                            onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'restore' })}
+                            className="p-2 text-slate-400 hover:text-emerald-650 hover:bg-emerald-50 border border-transparent hover:border-emerald-100 hover:shadow-sm rounded-xl transition-all"
+                            title="Reactivar / Desarchivar compra"
+                          >
+                            <RotateCcw size={15} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setPurchaseToConfirm({ id: purchase.id, action: 'archive' })}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 hover:shadow-sm rounded-xl transition-all"
+                            title="Archivar (Borrado Lógico) compra"
+                          >
+                            <Archive size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -408,6 +443,33 @@ const Purchases: React.FC = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Información de Envío / Ruta de Despacho */}
+              {(selectedPurchase.direccion_origen || selectedPurchase.direccion_destino) && (
+                <div className="bg-gray-50/40 p-4 rounded-xl border border-gray-100 space-y-3">
+                  <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">Detalles de Ruta y Despacho</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 p-1 bg-gray-100 text-gray-700 rounded-md border border-gray-200">
+                        <Truck size={13} />
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Origen (Despacho)</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedPurchase.direccion_origen || 'No especificado'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 p-1 bg-black text-white rounded-md">
+                        <MapPin size={13} />
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Destino (Entrega)</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedPurchase.direccion_destino || 'No especificado'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Listado de Productos */}
               <div>

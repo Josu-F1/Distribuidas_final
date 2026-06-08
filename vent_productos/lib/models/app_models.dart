@@ -5,7 +5,10 @@ class User {
   final String apellidos;
   final String email;
   final String rol;
+  final String? telefono;
+  final String? cedula;
   final bool estado;
+  final bool eliminado;
   final String createdAt;
 
   User({
@@ -15,20 +18,26 @@ class User {
     required this.apellidos,
     required this.email,
     required this.rol,
+    this.telefono,
+    this.cedula,
     required this.estado,
+    required this.eliminado,
     required this.createdAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'].toString(),
-      firebaseUid: json['firebase_uid'] ?? '',
-      nombres: json['nombres'] ?? '',
-      apellidos: json['apellidos'] ?? '',
-      email: json['email'] ?? '',
-      rol: json['rol'],
-      estado: json['estado'] == true,
-      createdAt: json['created_at'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      firebaseUid: (json['firebase_uid'] ?? '').toString(),
+      nombres: (json['nombres'] ?? '').toString(),
+      apellidos: (json['apellidos'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      rol: (json['rol'] ?? '').toString(),
+      telefono: json['telefono']?.toString(),
+      cedula: (json['cedula'] ?? json['cedula_ruc'] ?? '').toString(),
+      estado: json['estado'] == true || json['estado'] == 1 || json['estado'].toString().toLowerCase() == 'true',
+      eliminado: json['eliminado'] == true || json['eliminado'] == 1 || json['eliminado'].toString().toLowerCase() == 'true',
+      createdAt: (json['created_at'] ?? '').toString(),
     );
   }
 
@@ -43,6 +52,7 @@ class Product {
   final int stock;
   final String categoria;
   final bool activo;
+  final bool eliminado;
   final String imagenUrl;
 
   Product({
@@ -53,6 +63,7 @@ class Product {
     required this.stock,
     required this.categoria,
     required this.activo,
+    required this.eliminado,
     required this.imagenUrl,
   });
 
@@ -65,6 +76,7 @@ class Product {
       stock: json['stock'],
       categoria: json['categoria'] ?? 'General',
       activo: json['activo'] == true,
+      eliminado: json['eliminado'] == true || json['eliminado'] == 1 || json['eliminado'].toString().toLowerCase() == 'true',
       imagenUrl: json['imagen_url'] ?? json['imagen'] ?? json['image_url'] ?? '',
     );
   }
@@ -104,6 +116,9 @@ class Purchase {
   final double total;
   final String estado;
   final List<PurchaseDetail> detalles;
+  final String? direccionOrigen;
+  final String? direccionDestino;
+  final bool eliminado;
   final Map<String, dynamic>? rawJson;
 
   Purchase({
@@ -117,6 +132,9 @@ class Purchase {
     required this.total,
     required this.estado,
     required this.detalles,
+    this.direccionOrigen,
+    this.direccionDestino,
+    required this.eliminado,
     this.rawJson,
   });
 
@@ -143,6 +161,9 @@ class Purchase {
       total: double.parse(json['total'].toString()),
       estado: json['estado'] ?? '',
       detalles: detailsList,
+      direccionOrigen: json['direccion_origen']?.toString(),
+      direccionDestino: json['direccion_destino']?.toString(),
+      eliminado: json['eliminado'] == true || json['eliminado'] == 1 || json['eliminado'].toString().toLowerCase() == 'true',
       rawJson: json,
     );
   }

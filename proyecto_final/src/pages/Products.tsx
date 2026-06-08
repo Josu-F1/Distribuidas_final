@@ -244,42 +244,69 @@ const Products: React.FC = () => {
                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">No se encontraron productos.</td>
                 </tr>
               ) : filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(product => (
-                <tr key={product.id} className="hover:bg-gray-50/40 transition-all duration-200 group text-sm text-gray-600 hover:-translate-y-[0.5px]">
+                <tr 
+                  key={product.id} 
+                  className={`hover:bg-slate-50/45 transition-all duration-200 group text-sm text-slate-650 ${
+                    product.activo ? 'hover:-translate-y-[0.5px]' : 'opacity-60 bg-slate-50/10'
+                  }`}
+                >
                   <td className="px-6 py-4">
                      <div className="flex items-center gap-3">
                        {(() => {
-                         let imgUrl = product.imagen_url || (product as any).imagen || (product as any).image_url || (product as any).image;
-                         if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('data:image')) {
-                           imgUrl = imgUrl.replace(/\s/g, '');
-                         }
-                         const hasError = imageErrors[product.id];
-                         if (imgUrl && !hasError) {
-                           return (
-                             <img 
-                               src={imgUrl} 
-                               alt={product.nombre} 
-                               className="w-12 h-12 object-cover rounded-xl border border-gray-100 bg-gray-50 flex-shrink-0 group-hover:scale-105 transition-all duration-300 shadow-sm"
-                               onError={() => {
-                                 setImageErrors(prev => ({ ...prev, [product.id]: true }));
-                               }}
-                             />
-                           );
-                         }
-                         return (
-                           <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0 border border-gray-150 group-hover:bg-white group-hover:border-black/10 transition-all duration-300">
-                             <ImageIcon size={20} />
-                           </div>
-                         );
+                          let imgUrl = product.imagen_url || (product as any).imagen || (product as any).image_url || (product as any).image;
+                          if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('data:image')) {
+                            imgUrl = imgUrl.replace(/\s/g, '');
+                          }
+                          const hasError = imageErrors[product.id];
+                          if (imgUrl && !hasError) {
+                            return (
+                              <img 
+                                src={imgUrl} 
+                                alt={product.nombre} 
+                                className={`w-12 h-12 object-cover rounded-xl border flex-shrink-0 transition-all duration-300 shadow-sm ${
+                                  product.activo ? 'border-slate-100 group-hover:scale-105' : 'border-slate-200 opacity-60'
+                                }`}
+                                onError={() => {
+                                  setImageErrors(prev => ({ ...prev, [product.id]: true }));
+                                }}
+                              />
+                            );
+                          }
+                          return (
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border transition-all duration-300 ${
+                              product.activo 
+                                ? 'bg-slate-50 text-slate-400 border-slate-150 group-hover:bg-white group-hover:border-slate-200' 
+                                : 'bg-slate-100/50 text-slate-350 border-slate-200'
+                            }`}>
+                              <ImageIcon size={20} />
+                            </div>
+                          );
                        })()}
                        <div className="flex flex-col">
-                         <span className="font-bold text-gray-900 group-hover:text-black transition-colors">{product.nombre}</span>
-                         <span className="text-xs text-gray-400 line-clamp-1 mt-0.5">{product.descripcion || 'Sin descripción'}</span>
+                          <span className={`font-bold transition-all duration-355 ${
+                            product.activo ? 'text-slate-900 group-hover:text-black' : 'text-slate-450 line-through'
+                          }`}>
+                            {product.nombre}
+                          </span>
+                          <span className={`text-xs transition-all duration-355 ${
+                            product.activo ? 'text-slate-400 line-clamp-1 mt-0.5' : 'text-slate-400/80 line-through line-clamp-1 mt-0.5'
+                          }`}>
+                            {product.descripcion || 'Sin descripción'}
+                          </span>
                        </div>
                      </div>
                    </td>
-                  <td className="px-6 py-4 font-bold text-gray-955">${Number(product.precio).toFixed(2)}</td>
+                  <td className={`px-6 py-4 font-bold transition-all duration-355 ${product.activo ? 'text-slate-950' : 'text-slate-400 line-through'}`}>
+                    ${Number(product.precio).toFixed(2)}
+                  </td>
                   <td className="px-6 py-4 font-medium">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${product.stock < 5 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-gray-50 text-gray-700 border border-gray-100'}`}>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      !product.activo 
+                        ? 'bg-slate-100 text-slate-400 border-slate-150 line-through' 
+                        : product.stock < 5 
+                          ? 'bg-red-50 text-red-650 border-red-100 animate-pulse' 
+                          : 'bg-slate-50 text-slate-700 border-slate-150'
+                    }`}>
                       {product.stock} uds.
                     </span>
                   </td>
@@ -294,30 +321,34 @@ const Products: React.FC = () => {
                           toast.error('Error al actualizar estado');
                         }
                       }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-wider border transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider border transition-all ${
                         product.activo 
-                          ? 'bg-black text-white border-black/10 hover:bg-black/90' 
-                          : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200/60'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100' 
+                          : 'bg-rose-50 text-rose-700 border-rose-100 hover:bg-rose-100'
                       }`}
                     >
-                      <div className={`w-1.5 h-1.5 rounded-full ${product.activo ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
-                      {product.activo ? 'ACTIVO' : 'DESACTIVADO'}
+                      <div className={`w-1.5 h-1.5 rounded-full ${product.activo ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400'}`}></div>
+                      {product.activo ? 'ACTIVO' : 'BORRADO LÓGICO'}
                     </button>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">
                        <button 
-                         className="p-2 text-gray-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all"
+                         className="p-2 text-slate-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-150 rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:border-transparent"
                          onClick={() => handleOpenEdit(product)}
+                         disabled={!product.activo}
+                         title={product.activo ? "Editar" : "Reactive el producto para editar"}
                        >
                          <Edit2 size={15} />
                        </button>
                        <button 
-                         className={`p-2 text-gray-400 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-150 rounded-xl transition-all ${
-                           product.activo ? 'hover:text-red-500' : 'hover:text-green-500'
+                         className={`p-2 border border-transparent rounded-xl transition-all ${
+                           product.activo 
+                             ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 hover:shadow-sm' 
+                             : 'text-slate-400 hover:text-emerald-650 hover:bg-emerald-50 hover:border-emerald-100 hover:shadow-sm'
                          }`}
                          onClick={() => confirmDelete(product)}
-                         title={product.activo ? "Desactivar" : "Activar"}
+                         title={product.activo ? "Desactivar (Borrado Lógico)" : "Reactivar"}
                        >
                          <Power size={15} />
                        </button>
