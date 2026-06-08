@@ -35,5 +35,6 @@ export interface Purchase {
   estado: 'PENDIENTE' | 'PAGADA' | 'FACTURADA' | 'CANCELADA';
   direccion_origen?: string;
   direccion_destino?: string;
+  metodo_entrega?: 'DELIVERY' | 'PICKUP';
   eliminado?: boolean;
 }

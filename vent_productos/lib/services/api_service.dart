@@ -94,6 +94,7 @@ class ApiService {
     List<Map<String, dynamic>> items,
     String? direccionOrigen,
     String? direccionDestino,
+    String metodoEntrega,
     Map<String, String> headers,
   ) async {
     print('Enviando compra a: $baseUrl/api/compras');
@@ -110,6 +111,7 @@ class ApiService {
           'detalles': items,
           'direccion_origen': direccionOrigen,
           'direccion_destino': direccionDestino,
+          'metodo_entrega': metodoEntrega,
         }),
       ).timeout(const Duration(seconds: 30));
       

@@ -276,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+                            borderSide: const BorderSide(color: Color(0xFFFF0050), width: 1.5),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
@@ -320,7 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+                            borderSide: const BorderSide(color: Color(0xFFFF0050), width: 1.5),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
@@ -332,7 +332,7 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                            colors: [Color(0xFFFF0050), Color(0xFFE20040)],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),

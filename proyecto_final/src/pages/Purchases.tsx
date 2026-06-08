@@ -468,6 +468,18 @@ const Purchases: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                  {selectedPurchase.metodo_entrega && (
+                    <div className="border-t border-gray-100 pt-2.5 flex items-center gap-2">
+                      <span className="text-[10px] text-gray-450 font-bold uppercase tracking-wider">Método de Entrega:</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        selectedPurchase.metodo_entrega === 'PICKUP'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                      }`}>
+                        {selectedPurchase.metodo_entrega === 'PICKUP' ? 'Retiro en Local (Pickup)' : 'Envío / Delivery'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 

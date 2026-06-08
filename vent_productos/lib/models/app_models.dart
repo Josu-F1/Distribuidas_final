@@ -118,6 +118,7 @@ class Purchase {
   final List<PurchaseDetail> detalles;
   final String? direccionOrigen;
   final String? direccionDestino;
+  final String? metodoEntrega;
   final bool eliminado;
   final Map<String, dynamic>? rawJson;
 
@@ -134,6 +135,7 @@ class Purchase {
     required this.detalles,
     this.direccionOrigen,
     this.direccionDestino,
+    this.metodoEntrega,
     required this.eliminado,
     this.rawJson,
   });
@@ -163,6 +165,7 @@ class Purchase {
       detalles: detailsList,
       direccionOrigen: json['direccion_origen']?.toString(),
       direccionDestino: json['direccion_destino']?.toString(),
+      metodoEntrega: json['metodo_entrega']?.toString(),
       eliminado: json['eliminado'] == true || json['eliminado'] == 1 || json['eliminado'].toString().toLowerCase() == 'true',
       rawJson: json,
     );

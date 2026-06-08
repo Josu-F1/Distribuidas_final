@@ -854,4 +854,306 @@ class _ProductsPageState extends State<ProductsPage> {
       ),
     );
   }
+
+  void _showProductDetailsModal(BuildContext context, Product p) {
+    int localQuantity = 1;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      // Header Image Banner
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        color: const Color(0xFFF1F5F9),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: p.imagenUrl.isNotEmpty
+                                  ? Image.network(p.imagenUrl, fit: BoxFit.cover)
+                                  : const Icon(Icons.image_outlined, color: Colors.grey, size: 60),
+                            ),
+                            // Gradient shadow overlay
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Close icon top right
+                            Positioned(
+                              top: 16,
+                              right: 16,
+                              child: IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.black26,
+                                  shape: const CircleBorder(),
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Details Body
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Category badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: brandRed.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  p.categoria.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: brandRed,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Title and Price
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      p.nombre,
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF1E1E1E),
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '\$${p.precio.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: brandRed,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              // Rating and Stock row
+                              Row(
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 16),
+                                  const SizedBox(width: 4),
+                                  const Text('4.8', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+                                  const SizedBox(width: 4),
+                                  const Text('(50+ valoraciones)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                  const Spacer(),
+                                  // Stock
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: p.stock > 0 ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: p.stock > 0 ? const Color(0xFFA7F3D0) : const Color(0xFFFCA5A5),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      p.stock > 0 ? 'Stock: ${p.stock} unidades' : 'Agotado',
+                                      style: TextStyle(
+                                        color: p.stock > 0 ? const Color(0xFF047857) : const Color(0xFFB91C1C),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 32, color: Color(0xFFEFEFEF)),
+                              // Delivery Info Card (PedidosYa Style)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: bgGray,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFEFEFEF)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.delivery_dining_outlined, color: brandRed, size: 24),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Envío a domicilio disponible',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E1E1E)),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'Entrega estimada en 15 - 35 minutos',
+                                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              // Description
+                              const Text(
+                                'Descripción',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E1E1E),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                p.descripcion.isNotEmpty ? p.descripcion : 'No hay descripción disponible para este producto.',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF555555),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 80), // Space for bottom sheet buttons
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Bottom bar for adding to cart
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        border: Border(top: BorderSide(color: Color(0xFFEFEFEF))),
+                      ),
+                      child: Row(
+                        children: [
+                          // Quantity Selector
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove, size: 18, color: Colors.black54),
+                                  onPressed: localQuantity > 1
+                                      ? () => setModalState(() => localQuantity--)
+                                      : null,
+                                ),
+                                Text(
+                                  '$localQuantity',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add, size: 18, color: Colors.black54),
+                                  onPressed: localQuantity < p.stock
+                                      ? () => setModalState(() => localQuantity++)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Add to Cart Button
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: p.stock > 0
+                                  ? () {
+                                      final cart = Provider.of<CartProvider>(context, listen: false);
+                                      for (int i = 0; i < localQuantity; i++) {
+                                        cart.addToCart(p);
+                                      }
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('¡$localQuantity ${p.nombre} agregados al carrito!'),
+                                          backgroundColor: brandRed,
+                                          duration: const Duration(seconds: 2),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: brandRed,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                p.stock > 0
+                                    ? 'Agregar \$${(p.precio * localQuantity).toStringAsFixed(2)}'
+                                    : 'Agotado',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

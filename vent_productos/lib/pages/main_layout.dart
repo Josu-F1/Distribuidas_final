@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +20,8 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
+  double _cartX = -1;
+  double _cartY = -1;
 
   Widget _getBody() {
     switch (_selectedIndex) {
@@ -36,9 +39,41 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final size = MediaQuery.of(context).size;
+
+    // Initialize cart button coordinates at bottom right if not set yet
+    if (_cartX == -1 && _cartY == -1) {
+      _cartX = size.width - 76;
+      _cartY = size.height - 160;
+    }
 
     return Scaffold(
-      body: _getBody(),
+      body: Stack(
+        children: [
+          _getBody(),
+          if (_selectedIndex == 0 && cart.items.isNotEmpty)
+            Positioned(
+              left: _cartX,
+              top: _cartY,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    _cartX = (_cartX + details.delta.dx).clamp(16.0, size.width - 76.0);
+                    _cartY = (_cartY + details.delta.dy).clamp(16.0, size.height - 130.0);
+                  });
+                },
+                child: Badge(
+                  label: Text('${cart.items.fold(0, (sum, item) => sum + item.quantity)}'),
+                  child: FloatingActionButton(
+                    onPressed: () => _showCartModal(context),
+                    backgroundColor: const Color(0xFFFF0050),
+                    child: const Icon(Icons.shopping_cart, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -86,16 +121,6 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ),
       ),
-      floatingActionButton: _selectedIndex == 0 && cart.items.isNotEmpty
-          ? Badge(
-              label: Text('${cart.items.fold(0, (sum, item) => sum + item.quantity)}'),
-              child: FloatingActionButton(
-                onPressed: () => _showCartModal(context),
-                backgroundColor: const Color(0xFFFF0050),
-                child: const Icon(Icons.shopping_cart, color: Colors.white),
-              ),
-            )
-          : null,
     );
   }
 
@@ -766,10 +791,14 @@ class _CartModalState extends State<CartModal> {
   String _metodoPago = 'EFECTIVO'; // EFECTIVO, TARJETA, PAYPAL
   bool _isLoading = false;
 
+  static const Color brandRed = Color(0xFFFF0050);
+  String _metodoEntrega = 'DELIVERY'; // DELIVERY, PICKUP
+  String? _tiempoEstimado;
+
   @override
   void initState() {
     super.initState();
-    _direccionOrigenController = TextEditingController(text: 'TechStore 360 - Matriz Quito');
+    _direccionOrigenController = TextEditingController(text: 'TechStore 360 - Matriz Ambato');
     _direccionDestinoController = TextEditingController();
   }
 
@@ -778,6 +807,100 @@ class _CartModalState extends State<CartModal> {
     _direccionOrigenController.dispose();
     _direccionDestinoController.dispose();
     super.dispose();
+  }
+
+  Widget _buildDeliveryMethodToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _metodoEntrega = 'DELIVERY';
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _metodoEntrega == 'DELIVERY' ? brandRed : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _metodoEntrega == 'DELIVERY'
+                      ? [BoxShadow(color: brandRed.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                      : null,
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.delivery_dining_outlined,
+                        color: _metodoEntrega == 'DELIVERY' ? Colors.white : Colors.black54,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Delivery / Envío',
+                        style: TextStyle(
+                          color: _metodoEntrega == 'DELIVERY' ? Colors.white : Colors.black54,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _metodoEntrega = 'PICKUP';
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _metodoEntrega == 'PICKUP' ? brandRed : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _metodoEntrega == 'PICKUP'
+                      ? [BoxShadow(color: brandRed.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                      : null,
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.storefront_outlined,
+                        color: _metodoEntrega == 'PICKUP' ? Colors.white : Colors.black54,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Retiro en Local',
+                        style: TextStyle(
+                          color: _metodoEntrega == 'PICKUP' ? Colors.white : Colors.black54,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPaymentMethodCard(String type, IconData icon, String label) {
@@ -792,9 +915,12 @@ class _CartModalState extends State<CartModal> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected ? brandRed : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? Colors.black : const Color(0xFFE5E7EB)),
+            border: Border.all(color: isSelected ? brandRed : const Color(0xFFE5E7EB)),
+            boxShadow: isSelected
+                ? [BoxShadow(color: brandRed.withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 2))]
+                : null,
           ),
           child: Column(
             children: [
@@ -836,382 +962,408 @@ class _CartModalState extends State<CartModal> {
               key: _formKey,
               child: Column(
                 children: [
-              const SizedBox(height: 10),
-              Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text('Tu Carrito', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              ),
-              Expanded(
-                child: cart.items.isEmpty
-                    ? const Center(child: Text('El carrito está vacío'))
-                    : SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: cart.items.length,
-                              itemBuilder: (context, index) {
-                                final item = cart.items[index];
-                                final maxStock = item.product.stock;
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF9FAFB),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFF3F4F6)),
-                                  ),
-                                  child: Row(
+                  const SizedBox(height: 10),
+                  Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+                  const Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Text('Tu Carrito', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  ),
+                  Expanded(
+                    child: cart.items.isEmpty
+                        ? const Center(child: Text('El carrito está vacío'))
+                        : SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: cart.items.length,
+                                  itemBuilder: (context, index) {
+                                    final item = cart.items[index];
+                                    final maxStock = item.product.stock;
+                                    return Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF9FAFB),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFFF3F4F6)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.product.nombre,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '\$${item.product.precio.toStringAsFixed(2)} c/u',
+                                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          // Selector de cantidad
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove_circle_outline, color: Colors.black54, size: 22),
+                                                onPressed: () => cart.decrementQuantity(item.product.id),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                                child: Text(
+                                                  '${item.quantity}',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.add_circle_outline,
+                                                  color: item.quantity >= maxStock ? Colors.grey : Colors.black54,
+                                                  size: 22,
+                                                ),
+                                                onPressed: item.quantity >= maxStock
+                                                    ? null
+                                                    : () => cart.incrementQuantity(item.product.id),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 16),
+                                          // Precio Total Item
+                                          Text(
+                                            '\$${(item.product.precio * item.quantity).toStringAsFixed(2)}',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const Divider(color: Color(0xFFF3F4F6), height: 32),
+                                // Formulario de Direcciones
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Expanded(
-                                        child: Column(
+                                      const Text(
+                                        'DATOS DE DESPACHO / ENVÍO',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _buildDeliveryMethodToggle(),
+                                      const SizedBox(height: 16),
+                                      // Dirección de Origen
+                                      TextFormField(
+                                        controller: _direccionOrigenController,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                        decoration: InputDecoration(
+                                          labelText: 'Dirección de Origen (Despacho)',
+                                          labelStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                                          prefixIcon: const Icon(Icons.store_mall_directory_outlined, color: brandRed),
+                                          filled: true,
+                                          fillColor: const Color(0xFFF9FAFB),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: brandRed, width: 1.2),
+                                          ),
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return 'La dirección de origen es requerida';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      if (_metodoEntrega == 'DELIVERY') ...[
+                                        const SizedBox(height: 16),
+                                        // Dirección de Destino con Botón de Mapa
+                                        Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              item.product.nombre,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                            Expanded(
+                                              child: TextFormField(
+                                                controller: _direccionDestinoController,
+                                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                                decoration: InputDecoration(
+                                                  labelText: 'Dirección de Destino (Entrega)',
+                                                  labelStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                  prefixIcon: const Icon(Icons.location_on_outlined, color: brandRed),
+                                                  filled: true,
+                                                  fillColor: const Color(0xFFF9FAFB),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+                                                  ),
+                                                  enabledBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                                                  ),
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    borderSide: const BorderSide(color: brandRed, width: 1.2),
+                                                  ),
+                                                ),
+                                                validator: (value) {
+                                                  if (_metodoEntrega == 'DELIVERY' && (value == null || value.trim().isEmpty)) {
+                                                    return 'Por favor ingresa la dirección de entrega';
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '\$${item.product.precio.toStringAsFixed(2)} c/u',
-                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => InteractiveMapWidget(
+                                                    initialAddress: _direccionDestinoController.text,
+                                                    onAddressSelected: (address, estTime) {
+                                                      setState(() {
+                                                        _direccionDestinoController.text = address;
+                                                        _tiempoEstimado = estTime;
+                                                      });
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                              icon: const Icon(Icons.map_outlined),
+                                              style: IconButton.styleFrom(
+                                                backgroundColor: brandRed,
+                                                foregroundColor: Colors.white,
+                                                fixedSize: const Size(48, 48),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (_tiempoEstimado != null) ...[
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: brandRed.withOpacity(0.05),
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(color: brandRed.withOpacity(0.15)),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.timer_outlined, color: brandRed, size: 16),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Tiempo estimado de entrega: $_tiempoEstimado',
+                                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brandRed),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                      const SizedBox(height: 20),
+                                      const Divider(color: Color(0xFFF3F4F6), height: 1),
+                                      const SizedBox(height: 16),
+                                      // Switch Consumidor Final Premium
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: _isConsumidorFinal ? const Color(0xFFF1F5F9) : Colors.white,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: _isConsumidorFinal ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: _isConsumidorFinal ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.person_pin_rounded,
+                                                color: _isConsumidorFinal ? Colors.white : const Color(0xFF64748B),
+                                                size: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Consumidor Final',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFF0F172A),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    _isConsumidorFinal
+                                                        ? 'Facturación genérica sin datos'
+                                                        : 'Facturación con mis datos de perfil',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Color(0xFF64748B),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: _isConsumidorFinal,
+                                              activeThumbColor: brandRed,
+                                              activeTrackColor: brandRed.withOpacity(0.4),
+                                              inactiveThumbColor: Colors.white,
+                                              inactiveTrackColor: const Color(0xFFE2E8F0),
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  _isConsumidorFinal = val;
+                                                });
+                                              },
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      // Selector de cantidad
+                                      const SizedBox(height: 20),
+                                      const Divider(color: Color(0xFFF3F4F6), height: 1),
+                                      const SizedBox(height: 16),
+                                      // Método de Pago
+                                      const Text(
+                                        'MÉTODO DE PAGO',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
                                       Row(
-                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove_circle_outline, color: Colors.black54, size: 22),
-                                            onPressed: () => cart.decrementQuantity(item.product.id),
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                                            child: Text(
-                                              '${item.quantity}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.add_circle_outline,
-                                              color: item.quantity >= maxStock ? Colors.grey : Colors.black54,
-                                              size: 22,
-                                            ),
-                                            onPressed: item.quantity >= maxStock
-                                                ? null
-                                                : () => cart.incrementQuantity(item.product.id),
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                          ),
+                                          _buildPaymentMethodCard('EFECTIVO', Icons.money_rounded, 'Efectivo'),
+                                          const SizedBox(width: 8),
+                                          _buildPaymentMethodCard('TARJETA', Icons.credit_card_rounded, 'Tarjeta'),
+                                          const SizedBox(width: 8),
+                                          _buildPaymentMethodCard('PAYPAL', Icons.paypal_rounded, 'PayPal'),
                                         ],
                                       ),
-                                      const SizedBox(width: 16),
-                                      // Precio Total Item
-                                      Text(
-                                        '\$${(item.product.precio * item.quantity).toStringAsFixed(2)}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-                                      ),
+                                      const SizedBox(height: 20),
                                     ],
                                   ),
-                                );
-                              },
+                                ),
+                              ],
                             ),
-                            const Divider(color: Color(0xFFF3F4F6), height: 32),
-                            // Formulario de Direcciones
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'DATOS DE DESPACHO / ENVÍO',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Dirección de Origen
-                                  TextFormField(
-                                    controller: _direccionOrigenController,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                    decoration: InputDecoration(
-                                      labelText: 'Dirección de Origen (Despacho)',
-                                      labelStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-                                      prefixIcon: const Icon(Icons.store_mall_directory_outlined, color: Colors.black54),
-                                      filled: true,
-                                      fillColor: const Color(0xFFF9FAFB),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                                      ),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
-                                        return 'La dirección de origen es requerida';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  // Dirección de Destino con Botón de Mapa
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: TextFormField(
-                                          controller: _direccionDestinoController,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                            labelText: 'Dirección de Destino (Entrega)',
-                                            labelStyle: const TextStyle(color: Colors.grey, fontSize: 12),
-                                            prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.black54),
-                                            filled: true,
-                                            fillColor: const Color(0xFFF9FAFB),
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                                            ),
-                                          ),
-                                          validator: (value) {
-                                            if (value == null || value.trim().isEmpty) {
-                                              return 'Por favor ingresa la dirección de entrega';
-                                            }
-                                            return null;
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => InteractiveMapWidget(
-                                              initialAddress: _direccionDestinoController.text,
-                                              onAddressSelected: (address) {
-                                                setState(() {
-                                                  _direccionDestinoController.text = address;
-                                                });
-                                              },
-                                            ),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.map_outlined),
-                                        style: IconButton.styleFrom(
-                                          backgroundColor: Colors.black,
-                                          foregroundColor: Colors.white,
-                                          fixedSize: const Size(48, 48),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  const Divider(color: Color(0xFFF3F4F6), height: 1),
-                                  const SizedBox(height: 16),
-                                  // Switch Consumidor Final Premium
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: _isConsumidorFinal ? const Color(0xFFF1F5F9) : Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: _isConsumidorFinal ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: _isConsumidorFinal ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            Icons.person_pin_rounded,
-                                            color: _isConsumidorFinal ? Colors.white : const Color(0xFF64748B),
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                'Consumidor Final',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: Color(0xFF0F172A),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                _isConsumidorFinal
-                                                    ? 'Facturación genérica sin datos'
-                                                    : 'Facturación con mis datos de perfil',
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF64748B),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Switch(
-                                          value: _isConsumidorFinal,
-                                          activeThumbColor: const Color(0xFF0F172A),
-                                          activeTrackColor: const Color(0xFF94A3B8),
-                                          inactiveThumbColor: Colors.white,
-                                          inactiveTrackColor: const Color(0xFFE2E8F0),
-                                          onChanged: (val) {
-                                            setState(() {
-                                              _isConsumidorFinal = val;
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  const Divider(color: Color(0xFFF3F4F6), height: 1),
-                                  const SizedBox(height: 16),
-                                  // Método de Pago
-                                  const Text(
-                                    'MÉTODO DE PAGO',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      _buildPaymentMethodCard('EFECTIVO', Icons.money_rounded, 'Efectivo'),
-                                      const SizedBox(width: 8),
-                                      _buildPaymentMethodCard('TARJETA', Icons.credit_card_rounded, 'Tarjeta'),
-                                      const SizedBox(width: 8),
-                                      _buildPaymentMethodCard('PAYPAL', Icons.paypal_rounded, 'PayPal'),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                ],
-                              ),
-                            ),
+                          ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Subtotal:', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                            Text('\$${cart.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
                           ],
                         ),
-                      ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Subtotal:', style: TextStyle(fontSize: 14, color: Colors.black54)),
-                        Text('\$${cart.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('IVA (15%):', style: TextStyle(fontSize: 14, color: Colors.black54)),
-                        Text('\$${cart.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Divider(color: Color(0xFFE5E7EB), height: 1),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Total (inc. IVA):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('\$${cart.total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.green)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: cart.items.isEmpty
-                            ? null
-                            : () {
-                                if (_formKey.currentState!.validate()) {
-                                  _processPaymentCheckout(context, cart);
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('IVA (15%):', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                            Text('\$${cart.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          ],
                         ),
-                        child: const Text('Confirmar Compra', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-        ),
-        if (_isLoading)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
+                        const SizedBox(height: 12),
+                        const Divider(color: Color(0xFFE5E7EB), height: 1),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total (inc. IVA):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            Text('\$${cart.total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.green)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: cart.items.isEmpty
+                                ? null
+                                : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      _processPaymentCheckout(context, cart);
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: brandRed,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Confirmar Compra', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ),
+                        )
+                      ],
+                    ),
+                  )
+                ],
               ),
             ),
-          ),
-      ],
-    ),
-  ),
-);
+            if (_isLoading)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: brandRed),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _processPaymentCheckout(BuildContext context, CartProvider cart) {
@@ -1255,7 +1407,8 @@ class _CartModalState extends State<CartModal> {
       final String? compraId = await apiService.createPurchase(
         detalles,
         dirOrigen,
-        dirDestino,
+        _metodoEntrega == 'PICKUP' ? 'Retiro en local' : dirDestino,
+        _metodoEntrega,
         auth.headers,
       );
 
@@ -1323,7 +1476,7 @@ class _CartModalState extends State<CartModal> {
 
 class InteractiveMapWidget extends StatefulWidget {
   final String initialAddress;
-  final ValueChanged<String> onAddressSelected;
+  final Function(String address, String estimatedTime) onAddressSelected;
 
   const InteractiveMapWidget({
     super.key,
@@ -1336,34 +1489,56 @@ class InteractiveMapWidget extends StatefulWidget {
 }
 
 class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
-  LatLng _markerPosition = const LatLng(-0.180653, -78.467838); // Parque La Carolina, Quito
-  String _selectedAddress = "Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina";
+  static const Color brandRed = Color(0xFFFF0050);
+  LatLng _markerPosition = const LatLng(-1.249080, -78.616750); // Parque Juan Montalvo, Ambato
+  String _selectedAddress = "Calle Bolívar y Castillo, Parque Juan Montalvo, Ambato";
   final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialAddress.contains('Mariscal')) {
-      _markerPosition = const LatLng(-0.198943, -78.498877);
+    if (widget.initialAddress.contains('Ficoa')) {
+      _markerPosition = const LatLng(-1.238420, -78.632140);
       _selectedAddress = widget.initialAddress;
-    } else if (widget.initialAddress.contains('Ejido')) {
-      _markerPosition = const LatLng(-0.213231, -78.502321);
+    } else if (widget.initialAddress.contains('Mall') || widget.initialAddress.contains('Atahualpa')) {
+      _markerPosition = const LatLng(-1.261230, -78.624560);
       _selectedAddress = widget.initialAddress;
-    } else if (widget.initialAddress.contains('Villa Flora') || widget.initialAddress.contains('Maldonado')) {
-      _markerPosition = const LatLng(-0.245643, -78.523451);
+    } else if (widget.initialAddress.contains('Ingahurco')) {
+      _markerPosition = const LatLng(-1.235670, -78.611230);
       _selectedAddress = widget.initialAddress;
-    } else if (widget.initialAddress.contains('Bella Vista') || widget.initialAddress.contains('Eloy Alfaro')) {
-      _markerPosition = const LatLng(-0.184321, -78.475432);
+    } else if (widget.initialAddress.contains('Miraflores')) {
+      _markerPosition = const LatLng(-1.254320, -78.631210);
       _selectedAddress = widget.initialAddress;
-    } else if (widget.initialAddress.contains('Cíclope') || widget.initialAddress.contains('Granados')) {
-      _markerPosition = const LatLng(-0.165432, -78.454321);
+    } else if (widget.initialAddress.contains('UTA') || widget.initialAddress.contains('Einstein')) {
+      _markerPosition = const LatLng(-1.278900, -78.634560);
       _selectedAddress = widget.initialAddress;
-    } else if (widget.initialAddress.contains('Floresta') || widget.initialAddress.contains('Colón')) {
-      _markerPosition = const LatLng(-0.202341, -78.489012);
+    } else if (widget.initialAddress.contains('Atocha') || widget.initialAddress.contains('Pachano')) {
+      _markerPosition = const LatLng(-1.231230, -78.625430);
       _selectedAddress = widget.initialAddress;
     } else if (widget.initialAddress.trim().isNotEmpty) {
       _selectedAddress = widget.initialAddress;
     }
+  }
+
+  double _calculateDistance(LatLng p1, LatLng p2) {
+    const p = 0.017453292519943295;
+    final c = math.cos;
+    final a = 0.5 - c((p2.latitude - p1.latitude) * p)/2 + 
+          c(p1.latitude * p) * c(p2.latitude * p) * 
+          (1 - c((p2.longitude - p1.longitude) * p))/2;
+    return 12742 * math.asin(math.sqrt(a)); // Distance in km
+  }
+
+  String _getEstimatedTime(LatLng point) {
+    final storeLocation = const LatLng(-1.249080, -78.616750); // Parque Juan Montalvo
+    final distance = _calculateDistance(storeLocation, point);
+    int minutes = (distance * 5 + 12).round(); // 5 min per km + 12 min base
+    if (minutes < 15) minutes = 15;
+    if (minutes > 50) minutes = 50;
+    
+    final lower = (minutes - 3).clamp(15, 45);
+    final upper = (minutes + 5).clamp(20, 50);
+    return "$lower-$upper min";
   }
 
   String _getAddressFromLatLng(LatLng point) {
@@ -1371,17 +1546,17 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
     final double lng = point.longitude;
 
     final targets = [
-      {'name': 'Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina', 'lat': -0.180653, 'lng': -78.467838},
-      {'name': 'Av. 10 de Agosto y Cuero y Caicedo, Sector La Mariscal', 'lat': -0.198943, 'lng': -78.498877},
-      {'name': 'Av. Amazonas y Av. Patria, Parque El Ejido', 'lat': -0.213231, 'lng': -78.502321},
-      {'name': 'Av. Maldonado y Quimil, Villa Flora (Sur de Quito)', 'lat': -0.245643, 'lng': -78.523451},
-      {'name': 'Av. Eloy Alfaro y Av. 6 de Diciembre, Sector Bella Vista', 'lat': -0.184321, 'lng': -78.475432},
-      {'name': 'Av. Simón Bolívar y Av. de los Granados, Sector El Cíclope', 'lat': -0.165432, 'lng': -78.454321},
-      {'name': 'Av. Colón y Av. 12 de Octubre, Sector La Floresta', 'lat': -0.202341, 'lng': -78.489012},
+      {'name': 'Calle Bolívar y Castillo, Parque Juan Montalvo, Ambato', 'lat': -1.249080, 'lng': -78.616750},
+      {'name': 'Av. Atahualpa y Víctor Hugo, Sector Mall de los Andes, Ambato', 'lat': -1.261230, 'lng': -78.624560},
+      {'name': 'Av. Los Guaytambos y Delicias, Sector Ficoa, Ambato', 'lat': -1.238420, 'lng': -78.632140},
+      {'name': 'Av. de las Américas, Sector Terminal Terrestre Ingahurco, Ambato', 'lat': -1.235670, 'lng': -78.611230},
+      {'name': 'Av. Miraflores y Las Lilas, Sector Miraflores, Ambato', 'lat': -1.254320, 'lng': -78.631210},
+      {'name': 'Av. Albert Einstein, Sector Universidad Técnica de Ambato (UTA), Ambato', 'lat': -1.278900, 'lng': -78.634560},
+      {'name': 'Av. Rodrigo Pachano, Sector Parque de Atocha, Ambato', 'lat': -1.231230, 'lng': -78.625430},
     ];
 
     double minDistance = double.infinity;
-    String closestName = 'Quito, Ecuador';
+    String closestName = 'Ambato, Ecuador';
 
     for (var target in targets) {
       final double targetLat = target['lat'] as double;
@@ -1393,8 +1568,8 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
       }
     }
 
-    if (minDistance > 0.005) {
-      return 'Quito, Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}';
+    if (minDistance > 0.0003) {
+      return 'Ambato, Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}';
     }
     return closestName;
   }
@@ -1408,12 +1583,13 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final estTime = _getEstimatedTime(_markerPosition);
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        height: 520,
+        height: 540,
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -1422,11 +1598,11 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.map_outlined, color: Colors.black),
+                    Icon(Icons.map_outlined, color: brandRed),
                     SizedBox(width: 8),
                     Text(
-                      'Selector de Dirección',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                      'Selector de Dirección (Ambato)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
                     ),
                   ],
                 ),
@@ -1436,13 +1612,13 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
                 )
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             const Text(
-              'Toca en el mapa real para marcar el punto de entrega de tu pedido.',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              'Toca en el mapa real de Ambato para marcar el punto de entrega de tu pedido.',
+              style: TextStyle(color: Colors.grey, fontSize: 11),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
@@ -1452,7 +1628,7 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
                     mapController: _mapController,
                     options: MapOptions(
                       initialCenter: _markerPosition,
-                      initialZoom: 15.0,
+                      initialZoom: 14.5,
                       onTap: (tapPosition, point) => _onMapTap(point),
                     ),
                     children: [
@@ -1468,7 +1644,7 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
                             height: 60,
                             child: const Icon(
                               Icons.location_on,
-                              color: Colors.red,
+                              color: brandRed,
                               size: 40,
                             ),
                           ),
@@ -1479,7 +1655,7 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
                 ),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
@@ -1487,39 +1663,54 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.location_on_outlined, color: Colors.redAccent, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Dirección Detectada:', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        Text(
-                          _selectedAddress,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, color: brandRed, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Dirección Detectada:', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 2),
+                            Text(
+                              _selectedAddress,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 14, color: Color(0xFFE5E7EB)),
+                  Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, color: brandRed, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Tiempo estimado de entrega: $estTime',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brandRed),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 45,
               child: ElevatedButton(
                 onPressed: () {
-                  widget.onAddressSelected(_selectedAddress);
+                  widget.onAddressSelected(_selectedAddress, estTime);
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: brandRed,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: const Text(

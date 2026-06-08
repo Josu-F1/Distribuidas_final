@@ -36,6 +36,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
   String _searchQuery = '';
   int _currentPage = 1;
   static const int _itemsPerPage = 4;
+  static const Color brandRed = Color(0xFFFF0050);
 
   @override
   void initState() {
@@ -171,11 +172,11 @@ class _PurchasesPageState extends State<PurchasesPage> {
         elevation: 0,
         title: const Text(
           'Mis Compras',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: brandRed, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
+            icon: const Icon(Icons.refresh, color: brandRed),
             onPressed: _refreshPurchases,
             tooltip: 'Actualizar Historial',
           )
@@ -189,7 +190,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
         future: _purchasesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.black));
+            return const Center(child: CircularProgressIndicator(color: brandRed));
           } else if (snapshot.hasError) {
             return Center(
               child: Padding(
@@ -207,7 +208,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _refreshPurchases,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: brandRed),
                       child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
                     )
                   ],
@@ -348,7 +349,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.black, width: 1.2),
+                      borderSide: const BorderSide(color: brandRed, width: 1.2),
                     ),
                   ),
                 ),
@@ -511,10 +512,10 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                   if (purchase.direccionOrigen != null || purchase.direccionDestino != null) ...[
                                     const Row(
                                       children: [
-                                        Icon(Icons.local_shipping_outlined, size: 16, color: Colors.black54),
+                                        Icon(Icons.local_shipping_outlined, size: 16, color: brandRed),
                                         SizedBox(width: 8),
                                         Text(
-                                          'Información de Envío',
+                                          'Información de Envío / Entrega',
                                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54),
                                         ),
                                       ],
@@ -530,6 +531,29 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
+                                          if (purchase.metodoEntrega != null) ...[
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  purchase.metodoEntrega == 'PICKUP'
+                                                      ? Icons.storefront_outlined
+                                                      : Icons.delivery_dining_outlined,
+                                                  size: 16,
+                                                  color: brandRed,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Método de Entrega: ${purchase.metodoEntrega == 'PICKUP' ? 'Retiro en Local' : 'Envío / Delivery'}',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: brandRed,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const Divider(height: 16, color: Color(0xFFF3F4F6)),
+                                          ],
                                           Row(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
@@ -560,7 +584,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                           Row(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.redAccent),
+                                              const Icon(Icons.location_on_outlined, size: 16, color: brandRed),
                                               const SizedBox(width: 8),
                                               Expanded(
                                                 child: Column(
@@ -635,7 +659,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                       icon: const Icon(Icons.receipt_long_rounded, size: 18),
                                       label: const Text('Generar/Ver Factura XML'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.black,
+                                        backgroundColor: brandRed,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -745,7 +769,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                       children: [
                         Checkbox(
                           value: forceConsumidorFinal,
-                          activeColor: Colors.black,
+                          activeColor: brandRed,
                           onChanged: (val) {
                             setDialogState(() {
                               forceConsumidorFinal = val ?? false;
@@ -772,7 +796,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                         ),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator(color: Colors.black));
+                            return const Center(child: CircularProgressIndicator(color: brandRed));
                           }
                           
                           if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
@@ -808,7 +832,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                       icon: const Icon(Icons.refresh, size: 16),
                                       label: const Text('Reintentar ahora'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.black,
+                                        backgroundColor: brandRed,
                                         foregroundColor: Colors.white,
                                         textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -827,9 +851,9 @@ class _PurchasesPageState extends State<PurchasesPage> {
                             child: Column(
                               children: [
                                 const TabBar(
-                                  labelColor: Colors.black,
+                                  labelColor: brandRed,
                                   unselectedLabelColor: Colors.grey,
-                                  indicatorColor: Colors.black,
+                                  indicatorColor: brandRed,
                                   labelStyle: TextStyle(fontWeight: FontWeight.bold),
                                   tabs: [
                                     Tab(icon: Icon(Icons.picture_as_pdf_rounded, size: 20), text: 'Vista Previa'),
@@ -858,7 +882,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
+                    backgroundColor: brandRed,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
@@ -1104,6 +1128,10 @@ class _PurchasesPageState extends State<PurchasesPage> {
                   _buildInvoiceField('Despacho:', purchase.direccionOrigen ?? 'TechStore Matriz'),
                   const SizedBox(height: 4),
                   _buildInvoiceField('Entrega:', purchase.direccionDestino ?? 'Ecuador'),
+                  if (purchase.metodoEntrega != null) ...[
+                    const SizedBox(height: 4),
+                    _buildInvoiceField('Método Envío:', purchase.metodoEntrega == 'PICKUP' ? 'Retiro en Local' : 'Envío / Delivery'),
+                  ],
                 ],
               ),
             ),
@@ -1252,8 +1280,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 icon: const Icon(Icons.copy_rounded, size: 18),
                 label: const Text('Copiar XML'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  side: const BorderSide(color: Colors.black),
+                  foregroundColor: brandRed,
+                  side: const BorderSide(color: brandRed),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -1266,7 +1294,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 icon: const Icon(Icons.download_rounded, size: 18),
                 label: const Text('Descargar XML'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: brandRed,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1311,7 +1339,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('XML copiado al portapapeles (Opción de guardado local no disponible en móvil)'),
-          backgroundColor: Colors.black87,
+          backgroundColor: brandRed,
           behavior: SnackBarBehavior.floating,
         ),
       );
