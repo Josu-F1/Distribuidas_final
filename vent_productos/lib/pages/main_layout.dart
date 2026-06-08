@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'products_page.dart';
 import 'purchases_page.dart';
 import 'login_page.dart';
@@ -54,11 +56,11 @@ class _MainLayoutState extends State<MainLayout> {
               rippleColor: Colors.grey[300]!,
               hoverColor: Colors.grey[100]!,
               gap: 8,
-              activeColor: Colors.black,
+              activeColor: const Color(0xFFFF0050),
               iconSize: 24,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               duration: const Duration(milliseconds: 400),
-              tabBackgroundColor: Colors.grey[100]!,
+              tabBackgroundColor: const Color(0x0DFF0050),
               color: Colors.black,
               tabs: [
                 const GButton(
@@ -89,7 +91,7 @@ class _MainLayoutState extends State<MainLayout> {
               label: Text('${cart.items.fold(0, (sum, item) => sum + item.quantity)}'),
               child: FloatingActionButton(
                 onPressed: () => _showCartModal(context),
-                backgroundColor: Colors.black,
+                backgroundColor: const Color(0xFFFF0050),
                 child: const Icon(Icons.shopping_cart, color: Colors.white),
               ),
             )
@@ -762,6 +764,7 @@ class _CartModalState extends State<CartModal> {
   late TextEditingController _direccionDestinoController;
   bool _isConsumidorFinal = false;
   String _metodoPago = 'EFECTIVO'; // EFECTIVO, TARJETA, PAYPAL
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -827,10 +830,12 @@ class _CartModalState extends State<CartModal> {
             topRight: Radius.circular(20),
           ),
         ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+        child: Stack(
+          children: [
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
               const SizedBox(height: 10),
               Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
               const Padding(
@@ -1032,30 +1037,72 @@ class _CartModalState extends State<CartModal> {
                                   const SizedBox(height: 20),
                                   const Divider(color: Color(0xFFF3F4F6), height: 1),
                                   const SizedBox(height: 16),
-                                  // Switch Consumidor Final
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Row(
-                                        children: [
-                                          Icon(Icons.person_pin_outlined, color: Colors.black54),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Facturar como Consumidor Final',
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                                  // Switch Consumidor Final Premium
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: _isConsumidorFinal ? const Color(0xFFF1F5F9) : Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: _isConsumidorFinal ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _isConsumidorFinal ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                            shape: BoxShape.circle,
                                           ),
-                                        ],
-                                      ),
-                                      Switch(
-                                        value: _isConsumidorFinal,
-                                        activeColor: Colors.black,
-                                        onChanged: (val) {
-                                          setState(() {
-                                            _isConsumidorFinal = val;
-                                          });
-                                        },
-                                      ),
-                                    ],
+                                          child: Icon(
+                                            Icons.person_pin_rounded,
+                                            color: _isConsumidorFinal ? Colors.white : const Color(0xFF64748B),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Consumidor Final',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                _isConsumidorFinal
+                                                    ? 'Facturación genérica sin datos'
+                                                    : 'Facturación con mis datos de perfil',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF64748B),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Switch(
+                                          value: _isConsumidorFinal,
+                                          activeThumbColor: const Color(0xFF0F172A),
+                                          activeTrackColor: const Color(0xFF94A3B8),
+                                          inactiveThumbColor: Colors.white,
+                                          inactiveTrackColor: const Color(0xFFE2E8F0),
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _isConsumidorFinal = val;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(height: 20),
                                   const Divider(color: Color(0xFFF3F4F6), height: 1),
@@ -1146,8 +1193,25 @@ class _CartModalState extends State<CartModal> {
             ],
           ),
         ),
-      ),
-    );
+        if (_isLoading)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    ),
+  ),
+);
   }
 
   void _processPaymentCheckout(BuildContext context, CartProvider cart) {
@@ -1173,12 +1237,11 @@ class _CartModalState extends State<CartModal> {
     final dirOrigen = _direccionOrigenController.text.trim();
     final dirDestino = _direccionDestinoController.text.trim();
 
-    // Mostrar indicador de carga
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.white)),
-    );
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       // Mapear items del carrito al formato que espera el backend
@@ -1188,29 +1251,35 @@ class _CartModalState extends State<CartModal> {
         'precio_unitario': item.product.precio
       }).toList();
 
-      String? compraId = await apiService.createPurchase(
+      // Crear la compra a través de la API
+      final String? compraId = await apiService.createPurchase(
         detalles,
         dirOrigen,
         dirDestino,
         auth.headers,
       );
 
-      if (context.mounted) {
-        Navigator.pop(context); // Cerrar indicador de carga
-        
-        if (compraId != null) {
-          // Intentar generar factura en el servicio de facturación pública (Render)
-          await apiService.generateInvoice(
-            compraId, 
-            _isConsumidorFinal ? "consumidorfinal@techstore.com" : (auth.email ?? "test@test.com"), 
-            _isConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto,
-            _isConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999"),
-            _isConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999"),
-            cart.items
-          );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
 
-          if (!context.mounted) return;
+      if (compraId != null) {
+        // Generar factura de forma totalmente asíncrona sin bloquear la interfaz de usuario
+        apiService.generateInvoice(
+          compraId, 
+          _isConsumidorFinal ? "consumidorfinal@techstore.com" : (auth.email ?? "test@test.com"), 
+          _isConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto,
+          _isConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999"),
+          _isConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999"),
+          cart.items
+        ).catchError((err) {
+          print("Error al generar factura en background: $err");
+          return null;
+        });
 
+        if (context.mounted) {
           cart.clearCart();
           Navigator.pop(context); // Cerrar el modal del carrito
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1221,7 +1290,9 @@ class _CartModalState extends State<CartModal> {
             ),
           );
           widget.onPurchaseSuccess();
-        } else {
+        }
+      } else {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Error al procesar la compra. Intente nuevamente.'),
@@ -1232,10 +1303,18 @@ class _CartModalState extends State<CartModal> {
         }
       }
     } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       if (context.mounted) {
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'), 
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -1257,56 +1336,73 @@ class InteractiveMapWidget extends StatefulWidget {
 }
 
 class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
-  Offset _pinPosition = const Offset(150, 150);
+  LatLng _markerPosition = const LatLng(-0.180653, -78.467838); // Parque La Carolina, Quito
   String _selectedAddress = "Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina";
+  final MapController _mapController = MapController();
 
-  final List<Map<String, dynamic>> _mockRegions = [
-    {
-      'rect': const Rect.fromLTWH(0, 0, 150, 120),
-      'address': 'Av. 10 de Agosto y Cuero y Caicedo, Sector La Mariscal',
-    },
-    {
-      'rect': const Rect.fromLTWH(0, 120, 150, 130),
-      'address': 'Av. Amazonas y Av. Patria, Parque El Ejido',
-    },
-    {
-      'rect': const Rect.fromLTWH(0, 250, 150, 150),
-      'address': 'Av. Maldonado y Quimil, Villa Flora (Sur de Quito)',
-    },
-    {
-      'rect': const Rect.fromLTWH(150, 0, 150, 120),
-      'address': 'Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina',
-    },
-    {
-      'rect': const Rect.fromLTWH(150, 120, 150, 130),
-      'address': 'Av. Eloy Alfaro y Av. 6 de Diciembre, Sector Bella Vista',
-    },
-    {
-      'rect': const Rect.fromLTWH(150, 250, 150, 150),
-      'address': 'Av. Simón Bolívar y Av. de los Granados, Sector El Cíclope',
-    },
-    {
-      'rect': const Rect.fromLTWH(80, 80, 140, 140), // Centro
-      'address': 'Av. Colón y Av. 12 de Octubre, Sector La Floresta',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAddress.contains('Mariscal')) {
+      _markerPosition = const LatLng(-0.198943, -78.498877);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.contains('Ejido')) {
+      _markerPosition = const LatLng(-0.213231, -78.502321);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.contains('Villa Flora') || widget.initialAddress.contains('Maldonado')) {
+      _markerPosition = const LatLng(-0.245643, -78.523451);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.contains('Bella Vista') || widget.initialAddress.contains('Eloy Alfaro')) {
+      _markerPosition = const LatLng(-0.184321, -78.475432);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.contains('Cíclope') || widget.initialAddress.contains('Granados')) {
+      _markerPosition = const LatLng(-0.165432, -78.454321);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.contains('Floresta') || widget.initialAddress.contains('Colón')) {
+      _markerPosition = const LatLng(-0.202341, -78.489012);
+      _selectedAddress = widget.initialAddress;
+    } else if (widget.initialAddress.trim().isNotEmpty) {
+      _selectedAddress = widget.initialAddress;
+    }
+  }
 
-  void _updatePosition(Offset localPosition, Size size) {
-    setState(() {
-      _pinPosition = localPosition;
-      
-      // Encontrar región correspondiente a la posición relativa
-      String foundAddress = 'Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina';
-      double relativeX = (localPosition.dx / size.width) * 300;
-      double relativeY = (localPosition.dy / size.height) * 400;
-      Offset relOffset = Offset(relativeX, relativeY);
+  String _getAddressFromLatLng(LatLng point) {
+    final double lat = point.latitude;
+    final double lng = point.longitude;
 
-      for (var region in _mockRegions) {
-        if ((region['rect'] as Rect).contains(relOffset)) {
-          foundAddress = region['address'];
-        }
+    final targets = [
+      {'name': 'Av. de los Shyris y Av. Naciones Unidas, Parque La Carolina', 'lat': -0.180653, 'lng': -78.467838},
+      {'name': 'Av. 10 de Agosto y Cuero y Caicedo, Sector La Mariscal', 'lat': -0.198943, 'lng': -78.498877},
+      {'name': 'Av. Amazonas y Av. Patria, Parque El Ejido', 'lat': -0.213231, 'lng': -78.502321},
+      {'name': 'Av. Maldonado y Quimil, Villa Flora (Sur de Quito)', 'lat': -0.245643, 'lng': -78.523451},
+      {'name': 'Av. Eloy Alfaro y Av. 6 de Diciembre, Sector Bella Vista', 'lat': -0.184321, 'lng': -78.475432},
+      {'name': 'Av. Simón Bolívar y Av. de los Granados, Sector El Cíclope', 'lat': -0.165432, 'lng': -78.454321},
+      {'name': 'Av. Colón y Av. 12 de Octubre, Sector La Floresta', 'lat': -0.202341, 'lng': -78.489012},
+    ];
+
+    double minDistance = double.infinity;
+    String closestName = 'Quito, Ecuador';
+
+    for (var target in targets) {
+      final double targetLat = target['lat'] as double;
+      final double targetLng = target['lng'] as double;
+      final double dist = (lat - targetLat) * (lat - targetLat) + (lng - targetLng) * (lng - targetLng);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestName = target['name'] as String;
       }
-      _selectedAddress = foundAddress;
+    }
+
+    if (minDistance > 0.005) {
+      return 'Quito, Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}';
+    }
+    return closestName;
+  }
+
+  void _onMapTap(LatLng point) {
+    setState(() {
+      _markerPosition = point;
+      _selectedAddress = _getAddressFromLatLng(point);
     });
   }
 
@@ -1342,49 +1438,48 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Toca en el mapa interactivo para marcar el punto de entrega de tu pedido.',
+              'Toca en el mapa real para marcar el punto de entrega de tu pedido.',
               style: TextStyle(color: Colors.grey, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 15),
-            // El mapa interactivo
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
                 child: Container(
                   color: const Color(0xFFF3F4F6),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final size = Size(constraints.maxWidth, constraints.maxHeight);
-                      return GestureDetector(
-                        onTapDown: (details) => _updatePosition(details.localPosition, size),
-                        onPanUpdate: (details) => _updatePosition(details.localPosition, size),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: CustomPaint(
-                                painter: MapPainter(pinPosition: _pinPosition),
-                              ),
+                  child: FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _markerPosition,
+                      initialZoom: 15.0,
+                      onTap: (tapPosition, point) => _onMapTap(point),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.techstore360.app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _markerPosition,
+                            width: 60,
+                            height: 60,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 40,
                             ),
-                            Positioned(
-                              left: _pinPosition.dx - 20,
-                              top: _pinPosition.dy - 40,
-                              child: const Icon(
-                                Icons.location_on,
-                                color: Colors.red,
-                                size: 40,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 15),
-            // Dirección Seleccionada
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
@@ -1440,92 +1535,6 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
   }
 }
 
-class MapPainter extends CustomPainter {
-  final Offset pinPosition;
-  MapPainter({required this.pinPosition});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 1. Dibujar fondo (simulando un área de ciudad con zonas verdes y agua)
-    final backgroundPaint = Paint()..color = const Color(0xFFE5E7EB);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
-
-    // 2. Dibujar zonas verdes (Parques como La Carolina, El Ejido)
-    final parkPaint = Paint()..color = const Color(0xFFD1FAE5);
-    // Carolina Park (arriba a la derecha)
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(size.width * 0.55, size.height * 0.05, size.width * 0.35, size.height * 0.25), const Radius.circular(10)), parkPaint);
-    // El Ejido Park (centro izquierda)
-    canvas.drawCircle(Offset(size.width * 0.25, size.height * 0.45), size.width * 0.15, parkPaint);
-    // Parque Metropolitano (abajo a la derecha)
-    canvas.drawOval(Rect.fromLTWH(size.width * 0.6, size.height * 0.6, size.width * 0.3, size.height * 0.35), parkPaint);
-
-    // 3. Dibujar Río (Machángara o similar cruzando el mapa vectorialmente)
-    final riverPaint = Paint()
-      ..color = const Color(0xFFBFDBFE)
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final riverPath = Path();
-    riverPath.moveTo(size.width * 0.05, size.height * 0.95);
-    riverPath.quadraticBezierTo(size.width * 0.2, size.height * 0.7, size.width * 0.1, size.height * 0.5);
-    riverPath.quadraticBezierTo(size.width * 0.0, size.height * 0.3, size.width * 0.3, size.height * 0.25);
-    riverPath.quadraticBezierTo(size.width * 0.6, size.height * 0.2, size.width * 0.95, size.height * 0.05);
-    canvas.drawPath(riverPath, riverPaint);
-
-    // 4. Dibujar calles principales (Cuadrícula urbana simplificada)
-    final roadPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 8
-      ..style = PaintingStyle.stroke;
-
-    // Calles Verticales (Avenidas principales)
-    // Av. 10 de Agosto / Amazonas (Izquierda)
-    canvas.drawLine(Offset(size.width * 0.2, 0), Offset(size.width * 0.2, size.height), roadPaint);
-    // Av. de los Shyris / 6 de Diciembre (Derecha)
-    canvas.drawLine(Offset(size.width * 0.7, 0), Offset(size.width * 0.7, size.height), roadPaint);
-    // Av. Simón Bolívar (Extremo Derecho)
-    canvas.drawLine(Offset(size.width * 0.9, 0), Offset(size.width * 0.9, size.height), roadPaint);
-
-    // Calles Horizontales
-    // Av. Naciones Unidas (Arriba)
-    canvas.drawLine(Offset(0, size.height * 0.2), Offset(size.width, size.height * 0.2), roadPaint);
-    // Av. Colón / Eloy Alfaro (Centro)
-    canvas.drawLine(Offset(0, size.height * 0.5), Offset(size.width, size.height * 0.5), roadPaint);
-    // Av. Patria / Orellana (Abajo)
-    canvas.drawLine(Offset(0, size.height * 0.8), Offset(size.width, size.height * 0.8), roadPaint);
-
-    // 5. Dibujar etiquetas de calles (Texto pequeño y premium)
-    const textStyle = TextStyle(color: Colors.black38, fontSize: 8, fontWeight: FontWeight.bold);
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-
-    textPainter.text = const TextSpan(text: 'AV. AMAZONAS', style: textStyle);
-    textPainter.layout();
-    canvas.save();
-    canvas.translate(size.width * 0.23, size.height * 0.1);
-    canvas.rotate(1.57); // Rotar 90 grados
-    textPainter.paint(canvas, const Offset(0, 0));
-    canvas.restore();
-
-    textPainter.text = const TextSpan(text: 'AV. NACIONES UNIDAS', style: textStyle);
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(size.width * 0.35, size.height * 0.22));
-
-    textPainter.text = const TextSpan(text: 'AV. COLÓN', style: textStyle);
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(size.width * 0.35, size.height * 0.52));
-
-    // 6. Efecto de círculo/ondas pulsante en el pin
-    final pulsePaint = Paint()
-      ..color = Colors.red.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(pinPosition, 25, pulsePaint);
-    canvas.drawCircle(pinPosition, 12, Paint()..color = Colors.red.withOpacity(0.35));
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
 class PaypalCheckoutDialog extends StatefulWidget {
   final double total;
   final VoidCallback onSuccess;
@@ -1565,7 +1574,7 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
         setState(() {
           _step = 3;
         });
-        
+
         // Simular éxito y proceder
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
@@ -1580,11 +1589,13 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF003087), // Azul Oficial PayPal
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 16,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        padding: const EdgeInsets.all(24),
+        width: MediaQuery.of(context).size.width * 0.9,
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(28),
         child: _buildBody(),
       ),
     );
@@ -1597,52 +1608,97 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo de PayPal (Mock)
+              // Logo de PayPal (Estilo Dual Logo Oficial)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.paypal_rounded,
-                      color: Color(0xFF003087),
-                      size: 28,
-                    ),
+                  const Icon(
+                    Icons.paypal_rounded,
+                    color: Color(0xFF003087),
+                    size: 32,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'PayPal',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
+                  const SizedBox(width: 4),
+                  RichText(
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      children: [
+                        TextSpan(text: 'Pay', style: TextStyle(color: Color(0xFF003087))),
+                        TextSpan(text: 'Pal', style: TextStyle(color: Color(0xFF0079C1))),
+                      ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              Text(
-                'Pagar \$${widget.total.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+
+              // Caja de detalles del cobro
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Comercio:',
+                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'ProductTech 360',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Total a Pagar:',
+                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '\$${widget.total.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              // Email
+              const SizedBox(height: 24),
+
+              const Text(
+                'Correo electrónico',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _emailController,
-                style: const TextStyle(color: Colors.black, fontSize: 14),
+                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'Correo electrónico',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintText: 'ejemplo@paypal.com',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
+                  prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF64748B), size: 18),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: const Color(0xFFF8FAFC),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF003087), width: 1.5)),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -1654,19 +1710,27 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
-              // Password
+              const SizedBox(height: 16),
+
+              const Text(
+                'Contraseña de PayPal',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                style: const TextStyle(color: Colors.black, fontSize: 14),
+                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'Contraseña',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintText: '••••••••',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B), size: 18),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: const Color(0xFFF8FAFC),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF003087), width: 1.5)),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -1675,60 +1739,91 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
+
+              // Botón de Pagar (Amarillo PayPal oficial)
               SizedBox(
-                width: double.infinity,
-                height: 45,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _startPaymentProcess,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC439), // Amarillo PayPal
+                    backgroundColor: const Color(0xFFFFC439),
                     foregroundColor: const Color(0xFF003087),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Iniciar sesión para pagar', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Iniciar sesión para pagar',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF64748B)),
+                child: const Text('Cancelar y volver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
           ),
         );
       case 2:
-        return const Column(
+        return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(height: 20),
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 20),
-            Text(
-              'Procesando pago seguro en PayPal...',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 24),
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(color: Color(0xFF003087), strokeWidth: 3.5),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 24),
+            const Text(
+              'Procesando pago seguro...',
+              style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'No cierres la aplicación',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+            ),
+            const SizedBox(height: 24),
           ],
         );
       case 3:
-        return const Column(
+        return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(height: 20),
-            Icon(Icons.check_circle_rounded, color: Color(0xFFFFC439), size: 60),
-            SizedBox(height: 20),
-            Text(
-              '¡Pago Aprobado con Éxito!',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            const SizedBox(height: 24),
+            // Círculo verde de éxito premium animado
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFECFDF5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF10B981),
+                size: 54,
+              ),
             ),
-            SizedBox(height: 10),
-            Text(
-              'Redirigiendo...',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+            const SizedBox(height: 20),
+            const Text(
+              '¡Pago Autorizado!',
+              style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w900, fontSize: 18),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 6),
+            const Text(
+              'Transacción: PAY-8K218304NF',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Completando el pedido...',
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+            ),
+            const SizedBox(height: 24),
           ],
         );
       default:

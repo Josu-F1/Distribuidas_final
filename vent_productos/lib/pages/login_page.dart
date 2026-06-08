@@ -155,10 +155,13 @@ class _LoginPageState extends State<LoginPage> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          image: DecorationImage(
+            image: NetworkImage('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1024&auto=format&fit=crop'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Color(0xD80F172A),
+              BlendMode.srcOver,
+            ),
           ),
         ),
         child: Center(
@@ -188,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                         'P',
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight: FontWeight.black,
+                          fontWeight: FontWeight.w900,
                           fontSize: 16,
                           letterSpacing: -1,
                         ),
@@ -198,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       'ProductTech360',
                       style: TextStyle(
-                        fontWeight: FontWeight.black,
+                        fontWeight: FontWeight.w900,
                         fontSize: 22,
                         color: Colors.white,
                         letterSpacing: -0.5,
@@ -230,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Iniciar sesión',
                         style: TextStyle(
                           fontSize: 24,
-                          fontWeight: FontWeight.black,
+                          fontWeight: FontWeight.w900,
                           color: Color(0xFF0F172A),
                         ),
                       ),

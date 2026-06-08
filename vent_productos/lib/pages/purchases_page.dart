@@ -446,7 +446,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                 ),
                                 children: [
                                   const Divider(color: Color(0xFFF3F4F6), height: 24),
-                                  
+                                  _buildTimeline(purchase.estado),
                                   // Encabezado de la lista de productos
                                   const Row(
                                     children: [
@@ -872,6 +872,131 @@ class _PurchasesPageState extends State<PurchasesPage> {
     );
   }
 
+  Widget _buildTimeline(String status) {
+    final String normalized = status.toUpperCase().trim();
+    int currentStep = 1; // Default: PENDIENTE/CREADO
+    if (normalized == 'PAGADA' || normalized == 'COMPLETADO' || normalized == 'FACTURADA') {
+      currentStep = 2;
+    }
+    if (normalized == 'FACTURADA' || normalized == 'COMPLETADO') {
+      currentStep = 3;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ESTADO DEL PEDIDO',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildTimelineStep(1, 'Creado', currentStep >= 1),
+              _buildTimelineConnector(currentStep >= 2),
+              _buildTimelineStep(2, 'Pagado', currentStep >= 2),
+              _buildTimelineConnector(currentStep >= 3),
+              _buildTimelineStep(3, 'Facturado', currentStep >= 3),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineStep(int stepNum, String title, bool isDone) {
+    return Column(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isDone ? const Color(0xFF0F172A) : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDone ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+              width: 2,
+            ),
+            boxShadow: isDone
+                ? const [
+                    BoxShadow(
+                      color: Color(0x1F000000),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: isDone
+                ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                : Text(
+                    '$stepNum',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
+            color: isDone ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineConnector(bool isDone) {
+    return Expanded(
+      child: Container(
+        height: 3,
+        margin: const EdgeInsets.only(bottom: 18, left: 8, right: 8),
+        decoration: BoxDecoration(
+          color: isDone ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDottedDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: List.generate(
+          30,
+          (index) => Expanded(
+            child: Container(
+              color: index % 2 == 0 ? Colors.transparent : const Color(0xFFE2E8F0),
+              height: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildVisualInvoice(BuildContext context, Purchase purchase, String email, String clientName, String phone, String cedula) {
     final cleanDate = purchase.fechaCompra.isNotEmpty 
         ? purchase.fechaCompra.split('T')[0] 
@@ -880,18 +1005,18 @@ class _PurchasesPageState extends State<PurchasesPage> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Color(0x0F000000),
+            blurRadius: 16,
+            offset: Offset(0, 8),
           )
         ]
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -900,31 +1025,29 @@ class _PurchasesPageState extends State<PurchasesPage> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
                       'P',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   const Text(
                     'TECHSTORE 360',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.2),
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 1.2, color: Color(0xFF0F172A)),
                   ),
                   const Text(
-                    'FACTURACIÓN ELECTRÓNICA',
-                    style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    'FACTURACIÓN ELECTRÓNICA AUTORIZADA',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.0),
                   ),
-                  const SizedBox(height: 8),
-                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            _buildDottedDivider(),
             
             // Datos del documento
             Row(
@@ -933,101 +1056,72 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Nº FACTURA', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 2),
+                    const Text('Nº FACTURA', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
                     Text(
                       'F001-${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}', 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                     ),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('FECHA EMISIÓN', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 2),
+                    const Text('FECHA EMISIÓN', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
                     Text(
                       cleanDate, 
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                     ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            _buildDottedDivider(),
 
             // Información del Cliente
-            const Text('DATOS DEL RECEPTOR', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
+            const Text('RECEPTOR / CLIENTE', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            const SizedBox(height: 8),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFF3F4F6)),
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Text('Cliente: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(clientName, style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('Email: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(email, style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
+                  _buildInvoiceField('Cliente:', clientName),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text('Teléfono: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(phone, style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
+                  _buildInvoiceField('Email:', email),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text('RUC/Ced: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(cedula, style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
+                  _buildInvoiceField('Teléfono:', phone),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text('Despachado desde: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(purchase.direccionOrigen ?? 'TechStore Matriz', style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
+                  _buildInvoiceField('RUC/Cédula:', cedula),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Text('Entregado en: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
-                      Expanded(child: Text(purchase.direccionDestino ?? 'Ecuador', style: const TextStyle(fontSize: 11, color: Colors.black87))),
-                    ],
-                  ),
+                  _buildInvoiceField('Despacho:', purchase.direccionOrigen ?? 'TechStore Matriz'),
+                  const SizedBox(height: 4),
+                  _buildInvoiceField('Entrega:', purchase.direccionDestino ?? 'Ecuador'),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            _buildDottedDivider(),
 
             // Detalles de la compra
-            const Text('DETALLE DE FACTURA', style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
+            const Text('DETALLE DE ADQUISICIÓN', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            const SizedBox(height: 8),
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: purchase.detalles.length,
-              separatorBuilder: (context, index) => const Divider(color: Color(0xFFF3F4F6), height: 12),
+              separatorBuilder: (context, index) => const Divider(color: Color(0xFFE2E8F0), height: 16),
               itemBuilder: (context, i) {
                 final detail = purchase.detalles[i];
                 final subtotal = detail.cantidad * detail.precioUnitario;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(vertical: 2.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1035,67 +1129,84 @@ class _PurchasesPageState extends State<PurchasesPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(detail.productoNombre, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text(detail.productoNombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                             const SizedBox(height: 2),
                             Text('${detail.cantidad} x \$${detail.precioUnitario.toStringAsFixed(2)}', 
-                                style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                                style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                           ],
                         ),
                       ),
                       Text('\$${subtotal.toStringAsFixed(2)}', 
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                     ],
                   ),
                 );
               },
             ),
-            const SizedBox(height: 8),
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
-            const SizedBox(height: 12),
+            _buildDottedDivider(),
 
             // Totales de la Factura
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal:', style: TextStyle(fontSize: 12, color: Colors.black54)),
-                Text('\$${purchase.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                const Text('Subtotal Neto:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                Text('\$${purchase.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('IVA (15%):', style: TextStyle(fontSize: 12, color: Colors.black54)),
-                Text('\$${purchase.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                const Text('IVA Gravado (15%):', style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                Text('\$${purchase.iva.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade100),
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total a Pagar:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
+                  const Text('TOTAL PAGADO:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF065F46))),
                   Text('\$${purchase.total.toStringAsFixed(2)}', 
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.green)),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF065F46))),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             const Center(
               child: Text(
-                '¡Gracias por comprar en TechStore 360!',
-                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 11),
+                '¡Gracias por preferir TechStore 360!',
+                style: TextStyle(fontStyle: FontStyle.italic, color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w500),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInvoiceField(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF64748B)),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
     );
   }
 

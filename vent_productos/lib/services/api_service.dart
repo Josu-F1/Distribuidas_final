@@ -8,7 +8,8 @@ class ApiService {
   static const String baseUrl = 'https://techstore-flask-api.onrender.com';
 
   Future<List<User>> getUsers(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/usuarios'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/usuarios'), headers: headers)
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       List<dynamic> body = decodedBody['data'] ?? [];
@@ -26,7 +27,7 @@ class ApiService {
         ...headers,
       },
       body: jsonEncode(data),
-    );
+    ).timeout(const Duration(seconds: 30));
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       if (decodedBody is Map<String, dynamic>) {
@@ -66,7 +67,8 @@ class ApiService {
   }
 
   Future<List<Product>> getProducts(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/productos'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/productos'), headers: headers)
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       List<dynamic> body = decodedBody['data'] ?? [];
@@ -77,7 +79,8 @@ class ApiService {
   }
 
   Future<List<Purchase>> getPurchases(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/compras?admin=true'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl/api/compras?admin=true'), headers: headers)
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
       List<dynamic> body = decodedBody['data'] ?? [];
@@ -108,7 +111,7 @@ class ApiService {
           'direccion_origen': direccionOrigen,
           'direccion_destino': direccionDestino,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
       
       if (response.statusCode == 201) {
         final body = jsonDecode(response.body);
@@ -148,7 +151,7 @@ class ApiService {
         Uri.parse(billingUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
-      );
+      ).timeout(const Duration(seconds: 30));
       print('Respuesta servicio facturación: ${response.statusCode}');
       if (response.statusCode != 200) {
         print('Error en la respuesta del servicio de facturación: ${response.statusCode} - ${response.body}');
@@ -191,7 +194,7 @@ class ApiService {
         Uri.parse(billingUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
-      );
+      ).timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
         return response.body; // Retorna el XML
       } else {
