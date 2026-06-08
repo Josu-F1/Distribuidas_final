@@ -355,9 +355,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.black,
-                        Color(0xFF1F2937),
-                        Color(0xFF374151),
+                        Color(0xFFFF0050),
+                        Color(0xFFE60048),
+                        Color(0xFFCC0040),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -428,7 +428,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: CircleAvatar(
                       radius: 46,
-                      backgroundColor: Colors.black,
+                      backgroundColor: const Color(0xFFFF0050),
                       child: Text(
                         initials,
                         style: const TextStyle(
@@ -477,11 +477,11 @@ class _ProfilePageState extends State<ProfilePage> {
                               _isEditing = true;
                             });
                           },
-                          icon: const Icon(Icons.edit_rounded, size: 14, color: Colors.black),
+                          icon: const Icon(Icons.edit_rounded, size: 14, color: Color(0xFFFF0050)),
                           label: const Text(
                             'Editar',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: Color(0xFFFF0050),
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -545,7 +545,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ElevatedButton(
                           onPressed: _isSaving ? null : _saveProfile,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
+                            backgroundColor: const Color(0xFFFF0050),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -565,21 +565,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     // Vista normal
                     _buildInfoCard(
                       icon: Icons.person_outline_rounded,
-                      iconColor: Colors.black87,
+                      iconColor: const Color(0xFFFF0050),
                       title: 'Nombres Completos',
                       value: auth.nombreCompleto,
                     ),
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       icon: Icons.alternate_email_rounded,
-                      iconColor: Colors.black87,
+                      iconColor: const Color(0xFFFF0050),
                       title: 'Correo Electrónico',
                       value: auth.email ?? 'N/A',
                     ),
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       icon: Icons.phone_android_rounded,
-                      iconColor: Colors.black87,
+                      iconColor: const Color(0xFFFF0050),
                       title: 'Teléfono',
                       value: (auth.telefono != null && auth.telefono!.isNotEmpty) 
                           ? auth.telefono! 
@@ -588,7 +588,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       icon: Icons.badge_outlined,
-                      iconColor: Colors.black87,
+                      iconColor: const Color(0xFFFF0050),
                       title: 'Cédula / RUC',
                       value: (auth.cedula != null && auth.cedula!.isNotEmpty) 
                           ? auth.cedula! 
@@ -618,7 +618,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color(0xFFFF0050),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
