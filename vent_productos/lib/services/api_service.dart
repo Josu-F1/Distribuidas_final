@@ -79,7 +79,7 @@ class ApiService {
   }
 
   Future<List<Purchase>> getPurchases(Map<String, String> headers) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/compras?admin=true'), headers: headers)
+    final response = await http.get(Uri.parse('$baseUrl/api/compras'), headers: headers)
         .timeout(const Duration(seconds: 30));
     if (response.statusCode == 200) {
       final decodedBody = jsonDecode(response.body);
@@ -125,21 +125,6 @@ class ApiService {
       if (response.statusCode == 201) {
         final body = jsonDecode(response.body);
         final cid = body['compra_id']?.toString();
-        
-        // Si el estado debe ser PAGADA (ej. por PayPal), intentar forzar la actualización
-        if (cid != null && estado == 'PAGADA') {
-          try {
-            final resPut = await http.put(
-              Uri.parse('$baseUrl/api/compras/$cid'),
-              headers: requestHeaders,
-              body: jsonEncode({'estado': 'PAGADA', 'status': 'PAGADA'}),
-            ).timeout(const Duration(seconds: 15));
-            print('createPurchase PUT response: ${resPut.statusCode} - ${resPut.body}');
-          } catch (e) {
-            print('createPurchase PUT error: $e');
-          }
-        }
-        
         return cid;
       } else {
         try {
