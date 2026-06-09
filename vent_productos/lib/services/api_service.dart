@@ -158,7 +158,7 @@ class ApiService {
     }
   }
 
-  Future<void> generateInvoice(String compraId, String userEmail, String clientName, String? userPhone, String? userCedula, List<CartItem> items) async {
+  Future<void> generateInvoice(String compraId, String userEmail, String clientName, String? userPhone, String? userCedula, List<CartItem> items, {Map<String, String>? headers}) async {
     // URL de la API de facturación pública en Render
     const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
     
@@ -187,7 +187,25 @@ class ApiService {
         body: jsonEncode(payload),
       ).timeout(const Duration(seconds: 30));
       print('Respuesta servicio facturación: ${response.statusCode}');
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        final xmlFactura = response.body;
+        
+        final requestHeaders = {
+          'Content-Type': 'application/json',
+          if (headers != null) ...headers,
+        };
+
+        final updateRes = await http.put(
+          Uri.parse('$baseUrl/api/compras/$compraId/facturar'),
+          headers: requestHeaders,
+          body: jsonEncode({
+            'factura_xml': xmlFactura,
+            'clave_acceso': 'GENERADA_POR_API_EXTERNA'
+          }),
+        ).timeout(const Duration(seconds: 15));
+        
+        print('Actualización a FACTURADA: ${updateRes.statusCode}');
+      } else {
         print('Error en la respuesta del servicio de facturación: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {

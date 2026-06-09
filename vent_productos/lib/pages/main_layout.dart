@@ -1555,7 +1555,8 @@ class _CartModalState extends State<CartModal> {
           _isConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto,
           _isConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999"),
           _isConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999"),
-          itemsToInvoice // Pasamos la copia de CartItem
+          itemsToInvoice, // Pasamos la copia de CartItem
+          headers: auth.headers
         ).catchError((err) {
           print("Error al generar factura en background: $err");
           return null;

@@ -154,11 +154,9 @@ const Users: React.FC = () => {
   const handleDelete = async () => {
     if (!userToDelete) return;
     try {
-      // Usamos updateUser para cambiar el estado si queremos reactivar,
-      // o deleteUser si queremos desactivar (que ya hace update a false)
       if (userToDelete.estado) {
-        await deleteUser(userToDelete.id);
-        toast.success('Usuario desactivado');
+        await updateUser(userToDelete.id, { estado: false });
+        toast.success('Usuario archivado (borrado lógico)');
       } else {
         await updateUser(userToDelete.id, { estado: true });
         toast.success('Usuario activado');
@@ -188,7 +186,7 @@ const Users: React.FC = () => {
 
     const matchesSearch = fullName.includes(search) || email.includes(search);
     const matchesStatus = statusFilter === 'Todos' ||
-                         (statusFilter === 'Activo' ? user.estado : !user.estado);
+      (statusFilter === 'Activo' ? user.estado : !user.estado);
 
     return matchesSearch && matchesStatus;
   });
@@ -231,25 +229,25 @@ const Users: React.FC = () => {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
         <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row items-center gap-4 bg-gray-50/20">
-           <div className="flex-1 max-w-sm relative w-full">
-              <input
-                type="text"
-                placeholder="Buscar usuario por nombre o correo..."
-                className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-           </div>
-           <select
-             className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
-             value={statusFilter}
-             onChange={(e) => setStatusFilter(e.target.value)}
-           >
-             <option value="Todos">Todos los estados</option>
-             <option value="Activo">Activo</option>
-             <option value="Inactivo">Inactivo</option>
-           </select>
-           <div className="ml-auto text-xs font-bold text-gray-400 uppercase tracking-wider">{filteredUsers.length} clientes</div>
+          <div className="flex-1 max-w-sm relative w-full">
+            <input
+              type="text"
+              placeholder="Buscar usuario por nombre o correo..."
+              className="w-full pl-4 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 hover:border-gray-300 transition-colors"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 outline-none hover:border-gray-300 transition-colors cursor-pointer"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="Todos">Todos los estados</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+          <div className="ml-auto text-xs font-bold text-gray-400 uppercase tracking-wider">{filteredUsers.length} clientes</div>
         </div>
 
         <div className="overflow-x-auto">
@@ -274,27 +272,24 @@ const Users: React.FC = () => {
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">No se encontraron usuarios</td>
                 </tr>
               ) : filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
-                <tr 
-                  key={user.id} 
-                  className={`hover:bg-slate-50/45 transition-all duration-200 group text-sm text-slate-600 ${
-                    user.estado ? 'hover:-translate-y-[0.5px]' : 'opacity-60 bg-slate-50/10'
-                  }`}
+                <tr
+                  key={user.id}
+                  className={`hover:bg-slate-50/45 transition-all duration-200 group text-sm text-slate-600 ${user.estado ? 'hover:-translate-y-[0.5px]' : 'opacity-60 bg-slate-50/10'
+                    }`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs uppercase border transition-all duration-300 ${
-                        user.estado 
-                          ? 'bg-slate-50 text-slate-650 border-slate-100 group-hover:border-slate-250 group-hover:bg-white' 
-                          : 'bg-slate-100/50 text-slate-400 border-slate-150'
-                      }`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs uppercase border transition-all duration-300 ${user.estado
+                        ? 'bg-slate-50 text-slate-650 border-slate-100 group-hover:border-slate-250 group-hover:bg-white'
+                        : 'bg-slate-100/50 text-slate-400 border-slate-150'
+                        }`}>
                         {user.nombres.charAt(0)}
                       </div>
                       <div className="flex flex-col">
-                        <span className={`font-bold transition-all duration-355 ${
-                          user.estado 
-                            ? 'text-slate-900 group-hover:text-black' 
-                            : 'text-slate-400 line-through'
-                        }`}>
+                        <span className={`font-bold transition-all duration-355 ${user.estado
+                          ? 'text-slate-900 group-hover:text-black'
+                          : 'text-slate-400 line-through'
+                          }`}>
                           {user.nombres} {user.apellidos}
                         </span>
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Cliente</span>
@@ -310,11 +305,10 @@ const Users: React.FC = () => {
                   <td className="px-6 py-4">
                     <button
                       onClick={() => toggleStatus(user)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider border transition-all ${
-                        user.estado
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
-                          : 'bg-rose-50 text-rose-750 border-rose-100 hover:bg-rose-100'
-                      }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider border transition-all ${user.estado
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+                        : 'bg-rose-50 text-rose-750 border-rose-100 hover:bg-rose-100'
+                        }`}
                     >
                       <div className={`w-1.5 h-1.5 rounded-full ${user.estado ? 'bg-emerald-500 animate-pulse' : 'bg-rose-450'}`}></div>
                       {user.estado ? 'ACTIVO' : 'BORRADO LÓGICO'}
@@ -325,25 +319,24 @@ const Users: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">
-                       <button
-                         className="p-2 text-slate-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-150 rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:border-transparent"
-                         onClick={() => handleEditClick(user)}
-                         disabled={!user.estado}
-                         title={user.estado ? "Editar" : "Reactive el usuario para editar"}
-                       >
-                         <Edit2 size={15} />
-                       </button>
-                       <button
-                         className={`p-2 border border-transparent rounded-xl transition-all ${
-                           user.estado 
-                             ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 hover:shadow-sm' 
-                             : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 hover:shadow-sm'
-                         }`}
-                         onClick={() => confirmDelete(user)}
-                         title={user.estado ? "Desactivar (Borrado Lógico)" : "Reactivar"}
-                       >
-                         {user.estado ? <UserX size={15} /> : <UserCheck size={15} />}
-                       </button>
+                      <button
+                        className="p-2 text-slate-400 hover:text-black hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-150 rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:border-transparent"
+                        onClick={() => handleEditClick(user)}
+                        disabled={!user.estado}
+                        title={user.estado ? "Editar" : "Reactive el usuario para editar"}
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        className={`p-2 border border-transparent rounded-xl transition-all ${user.estado
+                          ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 hover:shadow-sm'
+                          : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 hover:shadow-sm'
+                          }`}
+                        onClick={() => confirmDelete(user)}
+                        title={user.estado ? "Desactivar (Borrado Lógico)" : "Reactivar"}
+                      >
+                        {user.estado ? <UserX size={15} /> : <UserCheck size={15} />}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -457,9 +450,8 @@ const Users: React.FC = () => {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 p-6 text-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              userToDelete?.estado ? 'bg-gray-100 text-gray-900' : 'bg-black text-white'
-            }`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${userToDelete?.estado ? 'bg-gray-100 text-gray-900' : 'bg-black text-white'
+              }`}>
               {userToDelete?.estado ? <UserX size={32} /> : <UserCheck size={32} />}
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
