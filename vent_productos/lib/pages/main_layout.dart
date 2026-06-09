@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -185,6 +186,37 @@ class _ProfilePageState extends State<ProfilePage> {
     return initials.isNotEmpty ? initials : 'U';
   }
 
+  bool _isValidEcuadorianCedula(String cedula) {
+    if (cedula.length != 10) return false;
+    if (!RegExp(r'^[0-9]+$').hasMatch(cedula)) return false;
+
+    int provincia = int.parse(cedula.substring(0, 2));
+    if ((provincia < 1 || provincia > 24) && provincia != 30) {
+      return false;
+    }
+
+    int tercerDigito = int.parse(cedula[2]);
+    if (tercerDigito >= 6) {
+      return false;
+    }
+
+    int suma = 0;
+    List<int> coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+    for (int i = 0; i < 9; i++) {
+      int valor = int.parse(cedula[i]) * coeficientes[i];
+      if (valor >= 10) {
+        valor -= 9;
+      }
+      suma += valor;
+    }
+
+    int digitoVerificador = int.parse(cedula[9]);
+    int residuo = suma % 10;
+    int resultado = residuo == 0 ? 0 : 10 - residuo;
+
+    return resultado == digitoVerificador;
+  }
+
   void _saveProfile() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final nombres = _nombresController.text.trim();
@@ -195,27 +227,47 @@ class _ProfilePageState extends State<ProfilePage> {
     if (nombres.isEmpty || apellidos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Nombres y apellidos son requeridos'),
+          content: Text('⚠️ Nombres y apellidos son requeridos'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
-    if (nombres.length > 15) {
+    if (nombres.length > 30) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('El nombre no puede tener más de 15 caracteres'),
+          content: Text('⚠️ El nombre no puede exceder los 30 caracteres'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
-    if (apellidos.length > 15) {
+    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(nombres)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('El apellido no puede tener más de 15 caracteres'),
+          content: Text('⚠️ Los nombres solo deben contener letras'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    if (apellidos.length > 30) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ El apellido no puede exceder los 30 caracteres'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(apellidos)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Los apellidos solo deben contener letras'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -226,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!telefono.startsWith('09')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('El teléfono debe comenzar con 09'),
+            content: Text('⚠️ El teléfono debe comenzar con 09'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -236,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (telefono.length != 10) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('El teléfono debe tener exactamente 10 dígitos'),
+            content: Text('⚠️ El teléfono debe tener exactamente 10 dígitos'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -246,7 +298,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!RegExp(r'^[0-9]+$').hasMatch(telefono)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('El teléfono solo debe contener números'),
+            content: Text('⚠️ El teléfono solo debe contener números'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -255,20 +307,10 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
     if (cedula.isNotEmpty) {
-      if (cedula.length != 10 && cedula.length != 13) {
+      if (!_isValidEcuadorianCedula(cedula)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('La cédula debe tener 10 dígitos (o 13 para RUC)'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-      if (!RegExp(r'^[0-9]+$').hasMatch(cedula)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('La cédula solo debe contener números'),
+            content: Text('⚠️ Cédula ecuatoriana inválida (debe tener 10 dígitos válidos)'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -504,12 +546,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       label: 'Nombres',
                       controller: _nombresController,
                       icon: Icons.person_outline_rounded,
+                      maxLength: 30,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     _buildEditableCard(
                       label: 'Apellidos',
                       controller: _apellidosController,
                       icon: Icons.person_outline_rounded,
+                      maxLength: 30,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     _buildEditableCard(
@@ -517,6 +567,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       controller: _telefonoController,
                       icon: Icons.phone_android_rounded,
                       keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                     ),
                     const SizedBox(height: 12),
                     _buildEditableCard(
@@ -524,6 +578,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       controller: _cedulaController,
                       icon: Icons.badge_outlined,
                       keyboardType: TextInputType.number,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                     ),
                     const SizedBox(height: 20),
                     // Botones de acción de edición
@@ -720,6 +778,8 @@ class _ProfilePageState extends State<ProfilePage> {
     required TextEditingController controller,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
   }) {
     return Container(
       width: double.infinity,
@@ -755,6 +815,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 TextField(
                   controller: controller,
                   keyboardType: keyboardType,
+                  inputFormatters: inputFormatters,
+                  maxLength: maxLength,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -764,6 +827,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 4),
                     border: InputBorder.none,
+                    counterText: '',
                   ),
                 ),
               ],
@@ -1274,11 +1338,39 @@ class _CartModalState extends State<CartModal> {
                                         children: [
                                           _buildPaymentMethodCard('EFECTIVO', Icons.money_rounded, 'Efectivo'),
                                           const SizedBox(width: 8),
-                                          _buildPaymentMethodCard('TARJETA', Icons.credit_card_rounded, 'Tarjeta'),
-                                          const SizedBox(width: 8),
                                           _buildPaymentMethodCard('PAYPAL', Icons.paypal_rounded, 'PayPal'),
                                         ],
                                       ),
+                                      if (_metodoPago == 'EFECTIVO') ...[
+                                        const SizedBox(height: 12),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFFBEB), // Soft yellow/amber background
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: const Color(0xFFFDE68A)),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Text(
+                                                  _metodoEntrega == 'PICKUP'
+                                                      ? 'Deberá realizar el pago al local al retirar su pedido.'
+                                                      : 'Deberá realizar el pago al delivery al recibir su pedido.',
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF92400E),
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                       const SizedBox(height: 20),
                                     ],
                                   ),
@@ -1371,10 +1463,16 @@ class _CartModalState extends State<CartModal> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => PaypalCheckoutDialog(
+        builder: (dialogContext) => PaypalCheckoutDialog(
           total: cart.total,
+          onCreatePurchase: () async {
+            return await _processPurchaseAsync(context, cart);
+          },
           onSuccess: () {
-            _processPurchase(context, cart);
+            if (mounted) {
+              Navigator.pop(context); // Cerrar CartModal
+            }
+            widget.onPurchaseSuccess(); // Redirigir a Mis Compras
           },
         ),
       );
@@ -1406,7 +1504,7 @@ class _CartModalState extends State<CartModal> {
       // Crear la compra a través de la API
       final String? compraId = await apiService.createPurchase(
         detalles,
-        dirOrigen,
+        dirOrigen + (_isConsumidorFinal ? " | CF" : " | DATA") + " | $_metodoPago",
         _metodoEntrega == 'PICKUP' ? 'Retiro en local' : dirDestino,
         _metodoEntrega,
         auth.headers,
@@ -1424,10 +1522,33 @@ class _CartModalState extends State<CartModal> {
         // Guardar copia de los items antes de vaciar el carrito
         final itemsToInvoice = List<CartItem>.from(cart.items);
 
-        // Ejecutar vaciado de carrito inmediatamente al saber que se completó
+        // 1. Cerrar el modal del carrito inmediatamente
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '¡Compra realizada con éxito! 🎉',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        // 2. Ejecutar vaciado de carrito
         cart.clearCart();
 
-        // Generar factura de forma totalmente asíncrona sin bloquear la interfaz de usuario
+        // 3. Generar factura de forma totalmente asíncrona sin bloquear la interfaz de usuario
         apiService.generateInvoice(
           compraId, 
           _isConsumidorFinal ? "consumidorfinal@techstore.com" : (auth.email ?? "test@test.com"), 
@@ -1440,23 +1561,24 @@ class _CartModalState extends State<CartModal> {
           return null;
         });
 
-        widget.onPurchaseSuccess(); // Redirigir siempre independientemente de `mounted`
-
-        if (mounted) {
-          Navigator.pop(context); // Cerrar el modal del carrito
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Compra realizada con éxito!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        // 4. Redirigir a "Mis Compras"
+        widget.onPurchaseSuccess();
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Error al procesar la compra. Intente nuevamente.'),
+              content: Row(
+                children: [
+                  Icon(Icons.error_outline_rounded, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚠️ Error al procesar la compra. Intente nuevamente.',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
             ),
@@ -1470,14 +1592,124 @@ class _CartModalState extends State<CartModal> {
         });
       }
       if (context.mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'), 
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⚠️ $errorMsg',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
+    }
+  }
+
+  Future<bool> _processPurchaseAsync(BuildContext context, CartProvider cart) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final apiService = ApiService();
+    final dirOrigen = _direccionOrigenController.text.trim();
+    final dirDestino = _direccionDestinoController.text.trim();
+
+    try {
+      final detalles = cart.items.map((item) => {
+        'producto_id': item.product.id,
+        'cantidad': item.quantity,
+        'precio_unitario': item.product.precio
+      }).toList();
+
+      final String? compraId = await apiService.createPurchase(
+        detalles,
+        dirOrigen + (_isConsumidorFinal ? " | CF" : " | DATA") + " | $_metodoPago",
+        _metodoEntrega == 'PICKUP' ? 'Retiro en local' : dirDestino,
+        _metodoEntrega,
+        auth.headers,
+        estado: 'PAGADA',
+        metodoPago: _metodoPago,
+      );
+
+      if (compraId != null) {
+        final itemsToInvoice = List<CartItem>.from(cart.items);
+        cart.clearCart();
+
+        // Generar factura de forma totalmente asíncrona sin bloquear la interfaz
+        apiService.generateInvoice(
+          compraId, 
+          _isConsumidorFinal ? "consumidorfinal@techstore.com" : (auth.email ?? "test@test.com"), 
+          _isConsumidorFinal ? "Consumidor Final" : auth.nombreCompleto,
+          _isConsumidorFinal ? "9999999999" : (auth.telefono ?? "0999999999"),
+          _isConsumidorFinal ? "9999999999" : (auth.cedula ?? "1899999999"),
+          itemsToInvoice
+        ).catchError((err) {
+          print("Error al generar factura en background: $err");
+          return null;
+        });
+
+        // Mostrar snackbar de éxito para PayPal también
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '¡Pago con PayPal procesado con éxito! 🎉',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error en _processPurchaseAsync: $e');
+      if (context.mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.startsWith('Exception: ')) {
+          errorMsg = errorMsg.replaceFirst('Exception: ', '');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⚠️ $errorMsg',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return false;
     }
   }
 }
@@ -1736,11 +1968,13 @@ class _InteractiveMapWidgetState extends State<InteractiveMapWidget> {
 
 class PaypalCheckoutDialog extends StatefulWidget {
   final double total;
+  final Future<bool> Function() onCreatePurchase;
   final VoidCallback onSuccess;
 
   const PaypalCheckoutDialog({
     super.key,
     required this.total,
+    required this.onCreatePurchase,
     required this.onSuccess,
   });
 
@@ -1768,19 +2002,28 @@ class _PaypalCheckoutDialogState extends State<PaypalCheckoutDialog> {
     });
 
     // Simular el procesamiento del pago en PayPal
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () async {
       if (mounted) {
         setState(() {
           _step = 3;
         });
 
-        // Simular éxito y proceder
-        Future.delayed(const Duration(milliseconds: 1500), () {
+        // Llamar a la API para crear la compra
+        final success = await widget.onCreatePurchase();
+
+        if (success) {
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) {
+              Navigator.pop(context); // Cerrar PayPal Dialog
+              widget.onSuccess();    // Ejecutar éxito
+            }
+          });
+        } else {
+          // Mostrar error en el diálogo (removido SnackBar redundante)
           if (mounted) {
             Navigator.pop(context); // Cerrar PayPal Dialog
-            widget.onSuccess();    // Ejecutar compra
           }
-        });
+        }
       }
     });
   }

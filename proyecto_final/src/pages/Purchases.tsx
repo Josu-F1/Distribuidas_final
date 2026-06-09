@@ -175,6 +175,25 @@ const Purchases: React.FC = () => {
     return resolvedItems;
   };
 
+  const cleanDireccion = (dir: string | undefined) => {
+    if (!dir) return 'No especificado';
+    const parts = dir.split(' | ');
+    if (parts.length === 0) return dir;
+    return parts[0].trim();
+  };
+
+  const isPurchasePaid = (purchase: Purchase) => {
+    const status = purchase.estado.toUpperCase().trim();
+    if (status === 'PAGADA' || status === 'PAGADO' || status === 'COMPLETADO' || status === 'FACTURADA') {
+      return true;
+    }
+    const dir = purchase.direccion_origen?.toUpperCase().trim() || '';
+    if (dir.endsWith('PAYPAL')) {
+      return true;
+    }
+    return false;
+  };
+
   // Filtrar según la búsqueda y el estado seleccionado
   const filteredPurchases = purchases.filter(purchase => {
     const isArchived = archivedIds.includes(purchase.id);
@@ -206,7 +225,7 @@ const Purchases: React.FC = () => {
         {[
           { label: 'Transacciones', value: purchases.length, icon: <ShoppingCart size={18} />, trend: 'Total acumulado' },
           { label: 'Volumen Total', value: `$${purchases.reduce((acc, p) => acc + (Number(p.total) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <CreditCard size={18} />, trend: 'En ventas brutas' },
-          { label: 'Pagadas', value: purchases.filter(p => p.estado === 'PAGADA').length, icon: <CheckCircle size={18} />, trend: 'Éxito en cobros' }
+          { label: 'Pagadas', value: purchases.filter(p => isPurchasePaid(p)).length, icon: <CheckCircle size={18} />, trend: 'Éxito en cobros' }
         ].map((stat, i) => (
           <div 
             key={i} 
@@ -323,12 +342,12 @@ const Purchases: React.FC = () => {
                         </span>
                       ) : (
                         <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1 w-fit border transition-all ${
-                          purchase.estado === 'PAGADA'
+                          isPurchasePaid(purchase)
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                             : 'bg-amber-50 text-amber-700 border-amber-100'
                         }`}>
-                          {purchase.estado === 'PAGADA' ? <CheckCircle size={10} /> : <Clock size={10} />}
-                          {purchase.estado}
+                          {isPurchasePaid(purchase) ? <CheckCircle size={10} /> : <Clock size={10} />}
+                          {isPurchasePaid(purchase) ? 'PAGADO' : purchase.estado}
                         </span>
                       )}
                     </td>
@@ -435,11 +454,11 @@ const Purchases: React.FC = () => {
                 </div>
                 <div>
                   <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">Estado de Pago</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase inline-flex items-center gap-1 border mt-1 ${selectedPurchase.estado === 'PAGADA'
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase inline-flex items-center gap-1 border mt-1 ${isPurchasePaid(selectedPurchase)
                       ? 'bg-black text-white border-black/10'
                       : 'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                    {selectedPurchase.estado}
+                    {isPurchasePaid(selectedPurchase) ? 'PAGADO' : selectedPurchase.estado}
                   </span>
                 </div>
               </div>
@@ -455,7 +474,7 @@ const Purchases: React.FC = () => {
                       </div>
                       <div>
                         <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Origen (Despacho)</span>
-                        <span className="text-xs font-semibold text-gray-900">{selectedPurchase.direccion_origen || 'No especificado'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{cleanDireccion(selectedPurchase.direccion_origen)}</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2.5">

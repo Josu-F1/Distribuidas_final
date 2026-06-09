@@ -25,7 +25,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export const getUsers = () => api.get<ApiResponse<User[]>>('/api/usuarios').then(res => res.data.data);
+export const getUsers = () => api.get<ApiResponse<User[]>>('/api/usuarios?admin=true').then(res => res.data.data);
 export const deleteUser = (id: string) => api.delete<ApiResponse<any>>(`/api/usuarios/${id}`).then(res => res.data);
 export const updateUser = (id: string, data: Partial<User>) => api.put<ApiResponse<User>>(`/api/usuarios/${id}`, data).then(res => res.data.data);
 

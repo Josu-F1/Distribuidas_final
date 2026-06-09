@@ -32,7 +32,7 @@ export interface Purchase {
   subtotal: number;
   iva: number;
   total: number;
-  estado: 'PENDIENTE' | 'PAGADA' | 'FACTURADA' | 'CANCELADA';
+  estado: 'PENDIENTE' | 'PAGADA' | 'PAGADO' | 'FACTURADA' | 'CANCELADA';
   direccion_origen?: string;
   direccion_destino?: string;
   metodo_entrega?: 'DELIVERY' | 'PICKUP';

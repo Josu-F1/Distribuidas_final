@@ -115,9 +115,12 @@ class ApiService {
           'direccion_destino': direccionDestino,
           'metodo_entrega': metodoEntrega,
           'estado': estado,
+          'status': estado,
           if (metodoPago != null) 'metodo_pago': metodoPago,
         }),
       ).timeout(const Duration(seconds: 30));
+      
+      print('createPurchase POST response: ${response.statusCode} - ${response.body}');
       
       if (response.statusCode == 201) {
         final body = jsonDecode(response.body);
@@ -126,22 +129,32 @@ class ApiService {
         // Si el estado debe ser PAGADA (ej. por PayPal), intentar forzar la actualización
         if (cid != null && estado == 'PAGADA') {
           try {
-            await http.put(
+            final resPut = await http.put(
               Uri.parse('$baseUrl/api/compras/$cid'),
               headers: requestHeaders,
-              body: jsonEncode({'estado': 'PAGADA'}),
+              body: jsonEncode({'estado': 'PAGADA', 'status': 'PAGADA'}),
             ).timeout(const Duration(seconds: 15));
-          } catch (_) {
-            // Ignorar errores si el endpoint no existe
+            print('createPurchase PUT response: ${resPut.statusCode} - ${resPut.body}');
+          } catch (e) {
+            print('createPurchase PUT error: $e');
           }
         }
         
         return cid;
+      } else {
+        try {
+          final body = jsonDecode(response.body);
+          if (body['error'] != null) {
+            throw Exception(body['error'].toString());
+          }
+        } catch (e) {
+          if (e is Exception) rethrow;
+        }
+        throw Exception('Fallo al registrar la compra. Código: ${response.statusCode}');
       }
-      return null;
     } catch (e) {
       print('Error en ApiService (createPurchase): $e');
-      return null;
+      rethrow;
     }
   }
 

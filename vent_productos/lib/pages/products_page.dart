@@ -62,6 +62,20 @@ class _ProductsPageState extends State<ProductsPage> {
     _filterProducts();
   }
 
+  bool _isSameCategory(String cat1, String cat2) {
+    final c1 = cat1.toLowerCase().trim();
+    final c2 = cat2.toLowerCase().trim();
+    if (c1 == 'todos' || c2 == 'todos') {
+      return c1 == c2;
+    }
+    String norm(String s) {
+      if (s.endsWith('es')) return s.substring(0, s.length - 2);
+      if (s.endsWith('s')) return s.substring(0, s.length - 1);
+      return s;
+    }
+    return c1 == c2 || norm(c1) == norm(c2) || c1.contains(c2) || c2.contains(c1);
+  }
+
   void _filterProducts() {
     final query = _searchController.text.toLowerCase().trim();
     setState(() {
@@ -70,19 +84,53 @@ class _ProductsPageState extends State<ProductsPage> {
             product.descripcion.toLowerCase().contains(query) ||
             product.categoria.toLowerCase().contains(query);
         final matchesCategory = _selectedCategory == 'Todos' ||
-            product.categoria.toLowerCase() == _selectedCategory.toLowerCase();
+            _isSameCategory(product.categoria, _selectedCategory);
         return matchesQuery && matchesCategory;
       }).toList();
     });
   }
 
   void _handleAddToCart(Product product) {
+    if (product.stock <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '⚠️ ¡Producto agotado! No se puede agregar al carrito.',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.amber[800],
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
     final cart = Provider.of<CartProvider>(context, listen: false);
 
     cart.addToCart(product);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('¡${product.nombre} agregado con éxito!'),
+        content: Row(
+          children: [
+            const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '¡${product.nombre} agregado con éxito! 🛒',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
         duration: const Duration(seconds: 1),
         backgroundColor: brandRed,
         behavior: SnackBarBehavior.floating,
@@ -595,14 +643,14 @@ class _ProductsPageState extends State<ProductsPage> {
                                   ),
                                   // Botón circular de añadir
                                   GestureDetector(
-                                    onTap: () => _handleAddToCart(p),
+                                    onTap: p.stock > 0 ? () => _handleAddToCart(p) : null,
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(
-                                        color: brandRed,
+                                      decoration: BoxDecoration(
+                                        color: p.stock > 0 ? brandRed : Colors.grey,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(Icons.add, color: Colors.white, size: 16),
+                                      child: Icon(p.stock > 0 ? Icons.add : Icons.block_flipped, color: Colors.white, size: 16),
                                     ),
                                   ),
                                 ],
@@ -639,7 +687,8 @@ class _ProductsPageState extends State<ProductsPage> {
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final cat = _categories[index];
-                final isSelected = _selectedCategory.toLowerCase() == cat.toLowerCase();
+                final isSelected = _selectedCategory.toLowerCase() == cat.toLowerCase() ||
+                    _isSameCategory(_selectedCategory, cat);
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: ChoiceChip(
@@ -1105,7 +1154,18 @@ class _ProductsPageState extends State<ProductsPage> {
                                       Navigator.pop(context);
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text('¡$localQuantity ${p.nombre} agregados al carrito!'),
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  '¡$localQuantity ${p.nombre} agregados al carrito! 🛒',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                           backgroundColor: brandRed,
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,

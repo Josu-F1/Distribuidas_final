@@ -164,7 +164,6 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
@@ -279,11 +278,22 @@ class _PurchasesPageState extends State<PurchasesPage> {
             final query = _searchQuery.toLowerCase().trim();
             if (query.isEmpty) return true;
 
-            final safeId = purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase();
-            final matchInvoiceId = 'factura #$safeId'.toLowerCase().contains(query) ||
-                purchase.id.toLowerCase().contains(query);
+            final safeId = purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toLowerCase();
+            final fullId = purchase.id.toLowerCase();
+            
+            // Normalizar espacios y caracteres especiales para búsquedas más flexibles
+            final cleanQuery = query.replaceAll(RegExp(r'[^a-z0-9]'), '');
+            final cleanInvoiceStr1 = 'factura$safeId';
+            final cleanInvoiceStr2 = 'factura$fullId';
+            
+            final matchInvoiceId = fullId.contains(query) ||
+                safeId.contains(query) ||
+                cleanInvoiceStr1.contains(cleanQuery) ||
+                cleanInvoiceStr2.contains(cleanQuery);
+                
             final matchProduct = purchase.detalles.any((detail) =>
                 detail.productoNombre.toLowerCase().contains(query));
+                
             return matchInvoiceId || matchProduct;
           }).toList();
 
@@ -397,9 +407,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                             formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
                           }
 
-                          final isPagada = purchase.estado.toUpperCase() == 'PAGADA' ||
-                                           purchase.estado.toUpperCase() == 'COMPLETADO' ||
-                                           purchase.estado.toUpperCase() == 'FACTURADA';
+                          final isPagada = _isPurchasePaid(purchase);
 
                           return Container(
                             decoration: BoxDecoration(
@@ -485,7 +493,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                             ),
                                           ),
                                           child: Text(
-                                            purchase.estado.toUpperCase(),
+                                            isPagada ? 'PAGADO' : purchase.estado.toUpperCase(),
                                             style: TextStyle(
                                               color: isPagada ? Colors.green[700] : Colors.orange[800],
                                               fontSize: 9,
@@ -500,7 +508,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                 ),
                                 children: [
                                   const Divider(color: Color(0xFFF3F4F6), height: 24),
-                                  _buildTimeline(purchase.estado),
+                                  _buildTimeline(purchase),
                                   // Encabezado de la lista de productos
                                   const Row(
                                     children: [
@@ -619,7 +627,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                                     const Text('Origen / Despacho:', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
                                                     const SizedBox(height: 2),
                                                     Text(
-                                                      purchase.direccionOrigen ?? 'No especificado',
+                                                      _cleanDireccion(purchase.direccionOrigen),
                                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                                                     ),
                                                   ],
@@ -783,7 +791,8 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   void _showInvoiceDialog(BuildContext context, Purchase purchase) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    bool forceConsumidorFinal = purchase.usuarioNombres == 'Consumidor Final';
+    final parts = purchase.direccionOrigen?.split(' | ') ?? [];
+    final bool forceConsumidorFinal = parts.length > 1 && parts[1].trim() == 'CF';
 
     showDialog(
       context: context,
@@ -819,26 +828,6 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 height: MediaQuery.of(context).size.height * 0.7,
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: forceConsumidorFinal,
-                          activeColor: brandRed,
-                          onChanged: (val) {
-                            setDialogState(() {
-                              forceConsumidorFinal = val ?? false;
-                            });
-                          },
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Generar como Consumidor Final',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 10),
                     Expanded(
                       child: FutureBuilder<String?>(
                         future: _apiService.generateInvoiceFromPurchase(
@@ -933,6 +922,16 @@ class _PurchasesPageState extends State<PurchasesPage> {
                 ),
               ),
               actions: [
+                ElevatedButton.icon(
+                  onPressed: () => _printPdfInvoice(context, purchase, emailParam, nameParam, phoneParam, cedulaParam),
+                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                  label: const Text('Descargar PDF'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade800,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
@@ -950,10 +949,11 @@ class _PurchasesPageState extends State<PurchasesPage> {
     );
   }
 
-  Widget _buildTimeline(String status) {
-    final String normalized = status.toUpperCase().trim();
+  Widget _buildTimeline(Purchase purchase) {
+    final String normalized = purchase.estado.toUpperCase().trim();
+    final bool isPaid = _isPurchasePaid(purchase);
     int currentStep = 1; // Default: PENDIENTE/CREADO
-    if (normalized == 'PAGADA' || normalized == 'COMPLETADO' || normalized == 'FACTURADA') {
+    if (isPaid) {
       currentStep = 2;
     }
     if (normalized == 'FACTURADA' || normalized == 'COMPLETADO') {
@@ -1056,6 +1056,25 @@ class _PurchasesPageState extends State<PurchasesPage> {
         ),
       ),
     );
+  }
+
+  String _cleanDireccion(String? dir) {
+    if (dir == null) return 'No especificado';
+    final parts = dir.split(' | ');
+    if (parts.isEmpty) return dir.trim();
+    return parts[0].trim();
+  }
+
+  bool _isPurchasePaid(Purchase purchase) {
+    final status = purchase.estado.toUpperCase().trim();
+    if (status == 'PAGADA' || status == 'PAGADO' || status == 'COMPLETADO' || status == 'FACTURADA') {
+      return true;
+    }
+    final dir = purchase.direccionOrigen?.toUpperCase().trim() ?? '';
+    if (dir.endsWith('PAYPAL')) {
+      return true;
+    }
+    return false;
   }
 
   Widget _buildDottedDivider() {
@@ -1179,7 +1198,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                   const SizedBox(height: 4),
                   _buildInvoiceField('RUC/Cédula:', cedula),
                   const SizedBox(height: 4),
-                  _buildInvoiceField('Despacho:', purchase.direccionOrigen ?? 'TechStore Matriz'),
+                  _buildInvoiceField('Despacho:', _cleanDireccion(purchase.direccionOrigen)),
                   const SizedBox(height: 4),
                   _buildInvoiceField('Entrega:', purchase.direccionDestino ?? 'Ecuador'),
                   if (purchase.metodoEntrega != null) ...[
@@ -1395,6 +1414,167 @@ class _PurchasesPageState extends State<PurchasesPage> {
           content: Text('XML copiado al portapapeles (Opción de guardado local no disponible en móvil)'),
           backgroundColor: brandRed,
           behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _printPdfInvoice(BuildContext context, Purchase purchase, String email, String clientName, String phone, String cedula) {
+    if (kIsWeb) {
+      try {
+        final cleanDate = purchase.fechaCompra.isNotEmpty 
+            ? purchase.fechaCompra.split('T')[0] 
+            : DateTime.now().toIso8601String().split('T')[0];
+            
+        final itemsHtml = purchase.detalles.map((detail) {
+          final subtotal = detail.cantidad * detail.precioUnitario;
+          return '''
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${detail.productoNombre}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${detail.cantidad}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">\$${detail.precioUnitario.toStringAsFixed(2)}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">\$${subtotal.toStringAsFixed(2)}</td>
+            </tr>
+          ''';
+        }).join('');
+
+        final htmlContent = '''
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Factura F001-${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}</title>
+            <style>
+              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; margin: 40px; }
+              .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, .15); font-size: 14px; line-height: 24px; border-radius: 10px; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .logo { font-size: 28px; font-weight: bold; background: #0f172a; color: white; display: inline-block; padding: 5px 15px; border-radius: 8px; margin-bottom: 10px; }
+              .title { font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px; }
+              .subtitle { font-size: 10px; color: #64748b; font-weight: bold; letter-spacing: 1px; }
+              .info-table { width: 100%; line-height: inherit; text-align: left; border-collapse: collapse; margin-bottom: 20px; }
+              .info-table td { padding: 5px; vertical-align: top; }
+              .details-table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; }
+              .details-table th { background: #f8fafc; padding: 10px; border-bottom: 2px solid #e2e8f0; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; }
+              .total-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 15px; margin-top: 20px; display: flex; justify-content: space-between; font-weight: bold; color: #065f46; font-size: 16px; }
+              .btn-print { background: #003087; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 20px; }
+              @media print {
+                .btn-print { display: none; }
+                body { margin: 0; }
+                .invoice-box { border: none; box-shadow: none; padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <div style="text-align: right;">
+              <button class="btn-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+            </div>
+            <div class="invoice-box">
+              <div class="header">
+                <div class="logo">P</div>
+                <div class="title">TECHSTORE 360</div>
+                <div class="subtitle">FACTURACIÓN ELECTRÓNICA AUTORIZADA</div>
+              </div>
+              
+              <table class="info-table">
+                <tr>
+                  <td>
+                    <strong>Nº FACTURA:</strong> F001-${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}<br>
+                    <strong>FECHA EMISIÓN:</strong> $cleanDate
+                  </td>
+                </tr>
+              </table>
+              
+              <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 20px 0;">
+              
+              <div style="font-weight: bold; font-size: 11px; color: #64748b; margin-bottom: 10px; text-transform: uppercase;">Receptor / Cliente</div>
+              <table class="info-table" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                <tr>
+                  <td>
+                    <strong>Cliente:</strong> $clientName<br>
+                    <strong>Email:</strong> $email<br>
+                    <strong>Teléfono:</strong> $phone<br>
+                    <strong>RUC/Cédula:</strong> $cedula
+                  </td>
+                  <td>
+                    <strong>Despacho:</strong> ${_cleanDireccion(purchase.direccionOrigen)}<br>
+                    <strong>Entrega:</strong> ${purchase.direccionDestino ?? 'Ecuador'}<br>
+                    <strong>Método Envío:</strong> ${purchase.metodoEntrega == 'PICKUP' ? 'Retiro en Local' : 'Envío / Delivery'}
+                  </td>
+                </tr>
+              </table>
+              
+              <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 20px 0;">
+              
+              <div style="font-weight: bold; font-size: 11px; color: #64748b; margin-bottom: 10px; text-transform: uppercase;">Detalle de Adquisición</div>
+              <table class="details-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Producto</th>
+                    <th style="text-align: center; width: 80px;">Cant.</th>
+                    <th style="text-align: right; width: 120px;">Precio Unit.</th>
+                    <th style="text-align: right; width: 120px;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  $itemsHtml
+                </tbody>
+              </table>
+              
+              <div style="width: 250px; margin-left: auto;">
+                <table style="width: 100%; font-size: 13px;">
+                  <tr>
+                    <td style="color: #64748b; padding: 4px 0;">Subtotal Neto:</td>
+                    <td style="text-align: right; font-weight: bold; padding: 4px 0;">\$${purchase.subtotal.toStringAsFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b; padding: 4px 0;">IVA Gravado (15%):</td>
+                    <td style="text-align: right; font-weight: bold; padding: 4px 0;">\$${purchase.iva.toStringAsFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <div class="total-box">
+                <span>TOTAL FACTURADO:</span>
+                <span>\$${purchase.total.toStringAsFixed(2)}</span>
+              </div>
+              
+              <div style="text-align: center; margin-top: 30px; font-style: italic; color: #94a3b8; font-size: 12px;">
+                ¡Gracias por preferir TechStore 360!
+              </div>
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+              }
+            </script>
+          </body>
+          </html>
+        ''';
+
+        final escapedHtml = htmlContent
+            .replaceAll("'", "\\'")
+            .replaceAll("\n", "\\n")
+            .replaceAll("\r", "");
+            
+        js.context.callMethod('eval', [
+          '''
+          var printWindow = window.open('', '_blank');
+          printWindow.document.write('$escapedHtml');
+          printWindow.document.close();
+          '''
+        ]);
+      } catch (e) {
+        print('Error al imprimir factura: \$e');
+      }
+    } else {
+      final textInvoice = 'Factura F001-${purchase.id.substring(0, purchase.id.length >= 8 ? 8 : purchase.id.length).toUpperCase()}\n'
+          'Fecha: ${purchase.fechaCompra}\n'
+          'Cliente: $clientName\n'
+          'Total: \$${purchase.total.toStringAsFixed(2)}';
+      Clipboard.setData(ClipboardData(text: textInvoice));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Detalle de factura copiado al portapapeles (Opción de PDF no disponible en móvil)'),
+          backgroundColor: brandRed,
         ),
       );
     }
