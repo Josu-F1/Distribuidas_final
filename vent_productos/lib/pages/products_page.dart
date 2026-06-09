@@ -46,7 +46,7 @@ class _ProductsPageState extends State<ProductsPage> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final products = await _apiService.getProducts(auth.headers);
       setState(() {
-        _allProducts = products.where((p) => p.activo).toList(); // Mostrar solo activos
+        _allProducts = products; // Mostrar todos los productos (activos e inactivos)
         _filteredProducts = _allProducts;
         _isLoading = false;
       });
@@ -393,7 +393,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
   // 1. Vista de Inicio / Hub (Estilo PedidosYa)
   Widget _buildHomeLandingView() {
-    final featuredProducts = _allProducts.take(4).toList();
+    final featuredProducts = _allProducts.where((p) => p.activo).take(4).toList();
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -833,6 +833,25 @@ class _ProductsPageState extends State<ProductsPage> {
                                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1E1E1E)),
                                     ),
                                     const Spacer(),
+                                    if (!product.activo) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red[50],
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.red[200]!, width: 0.5),
+                                        ),
+                                        child: const Text(
+                                          'INACTIVO',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                     // Stock label
                                     Text(
                                       'Stock: ${product.stock}',
