@@ -163,13 +163,16 @@ class ApiService {
     const String billingUrl = 'https://invoicing-rest-api-c6wh.onrender.com/api/factura';
     
     final safeCompraId = compraId.substring(0, compraId.length >= 8 ? 8 : compraId.length).toUpperCase();
+    
+    final finalEmail = userEmail.trim().isNotEmpty ? userEmail.trim() : "test@test.com";
+    
     final payload = {
       'numero': 'F001-$safeCompraId',
       'fecha': DateTime.now().toIso8601String().split('T')[0],
       'cliente': {
         'nombre': clientName.trim().isNotEmpty ? clientName : 'Cliente Móvil',
         'cedula_ruc': (userCedula != null && userCedula.trim().isNotEmpty) ? userCedula.trim() : '1899999999',
-        'correo': userEmail,
+        'correo': finalEmail,
         'telefono': (userPhone != null && userPhone.trim().isNotEmpty) ? userPhone.trim() : '0999999999',
         'direccion': 'Ecuador'
       },
@@ -180,13 +183,15 @@ class ApiService {
       }).toList()
     };
 
+    print('Enviando payload a facturación: \$payload');
+
     try {
       final response = await http.post(
         Uri.parse(billingUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       ).timeout(const Duration(seconds: 30));
-      print('Respuesta servicio facturación: ${response.statusCode}');
+      print('Respuesta servicio facturación: \${response.statusCode}');
       if (response.statusCode == 200) {
         final xmlFactura = response.body;
         
@@ -224,13 +229,15 @@ class ApiService {
         ? purchase.fechaCompra.split('T')[0] 
         : DateTime.now().toIso8601String().split('T')[0];
 
+    final finalEmail = userEmail.trim().isNotEmpty ? userEmail.trim() : "test@test.com";
+
     final payload = {
       'numero': 'F001-$safePurchaseId',
       'fecha': finalFecha,
       'cliente': {
         'nombre': clientName.trim().isNotEmpty ? clientName : 'Cliente Móvil',
         'cedula_ruc': (userCedula != null && userCedula.trim().isNotEmpty) ? userCedula.trim() : '1899999999',
-        'correo': userEmail,
+        'correo': finalEmail,
         'telefono': (userPhone != null && userPhone.trim().isNotEmpty) ? userPhone.trim() : '0999999999',
         'direccion': 'Ecuador'
       },
@@ -241,12 +248,15 @@ class ApiService {
       }).toList()
     };
 
+    print('Enviando payload a facturación: \$payload');
+
     try {
       final response = await http.post(
         Uri.parse(billingUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       ).timeout(const Duration(seconds: 30));
+      print('Respuesta API facturación: \${response.statusCode}');
       if (response.statusCode == 200) {
         return response.body; // Retorna el XML
       } else {
