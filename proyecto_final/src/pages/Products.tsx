@@ -169,6 +169,13 @@ const Products: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Productos</h1>
           <p className="text-gray-500 mt-1">Gestiona el inventario y catálogo de la tienda.</p>
         </div>
+        <button
+          onClick={handleOpenCreate}
+          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-900 transition-all shadow-sm hover:shadow-md"
+        >
+          <Plus size={18} />
+          Nuevo Producto
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
